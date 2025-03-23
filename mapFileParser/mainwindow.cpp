@@ -22,7 +22,7 @@ MainWindow::MainWindow(QWidget *parent)
     // Порівняння об'єктів
     Symbol sym2("mySymbol", 0x80000000);
     if (sym == sym2) {
-        qDebug() << "Symbols are equal";
+        qDebug() << "Symbols are equal 111111111111111111";
     }
 }
 
