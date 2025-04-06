@@ -1,0 +1,10 @@
+debug/gnumapparser.o
+debug/mapdescriptor.o
+debug/mapfile.o
+debug/sectioncategory.o
+debug/main.o
+debug/mainwindow.o
+debug/mapparser.o
+debug/mapparser1.o
+debug/symbol.o
+debug/moc_mainwindow.o

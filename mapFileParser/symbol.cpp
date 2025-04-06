@@ -52,7 +52,7 @@ bool Symbol::operator!=(const Symbol& other) const {
     return !(*this == other);
 }
 
-// Hash function for use in QHash/QSet
-uint qHash(const Symbol& key, uint seed) {
-    return qHash(key._name, seed) ^ qHash(key._vram, seed);
-}
+// // Hash function for use in QHash/QSet
+// uint qHash(const Symbol& key, uint seed) {
+//     return qHash(key._name, seed) ^ qHash(key._vram, seed);
+// }

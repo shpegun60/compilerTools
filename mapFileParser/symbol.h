@@ -42,8 +42,8 @@ public:
     bool operator==(const Symbol& other) const;
     bool operator!=(const Symbol& other) const;
 
-    // Hash function for use in QHash/QSet
-    friend uint qHash(const Symbol& key, uint seed);
+    // // Hash function for use in QHash/QSet
+    // friend uint qHash(const Symbol& key, uint seed);
 
     enum Scope {
         TYPE_UNKNOWN = 0,

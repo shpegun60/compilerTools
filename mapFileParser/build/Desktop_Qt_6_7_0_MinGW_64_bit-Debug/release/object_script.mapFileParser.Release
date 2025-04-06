@@ -1,0 +1,10 @@
+release/gnumapparser.o
+release/mapdescriptor.o
+release/mapfile.o
+release/sectioncategory.o
+release/main.o
+release/mainwindow.o
+release/mapparser.o
+release/mapparser1.o
+release/symbol.o
+release/moc_mainwindow.o
