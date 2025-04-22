@@ -1,0 +1,17 @@
+debug/gnudescriptor.o
+debug/gnumapfile.o
+debug/gnusection.o
+debug/gnusegment.o
+debug/linkerdescr.o
+debug/linkermemory.o
+debug/linkerraw.o
+debug/linkersection.o
+debug/linkersubsection.o
+debug/linkervariable.o
+debug/linkerfile.o
+debug/main.o
+debug/mainwindow.o
+debug/mapfile.o
+debug/segment.o
+debug/symbol.o
+debug/moc_mainwindow.o
