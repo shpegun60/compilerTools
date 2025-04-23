@@ -8,7 +8,7 @@
 
 
 ## Linker script is parsed:
-<img src="window_ld.PNG" width="600" title="hover text">
+<img src="window_ld.PNG" width="800" title="hover text">
 
 ## Last version
 ```
