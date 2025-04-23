@@ -2,8 +2,6 @@
 #define LINKERRAW_H
 
 #include "linkerdescr.h"
-#include <QRegularExpression>
-#include <QString>
 #include <QHash>
 
 class LinkerRaw

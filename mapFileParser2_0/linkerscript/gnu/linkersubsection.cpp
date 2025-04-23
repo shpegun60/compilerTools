@@ -16,7 +16,7 @@ void LinkerSubSection::append(const LinkerDescriptor& descr, const QString& txt)
             return;
         }
     }
-    _subsections.append(name);
+    _subsections.emplace_back(name);
 }
 
 const LinkerSubSection::Data &LinkerSubSection::read(const LinkerDescriptor& descr, const QString& text)

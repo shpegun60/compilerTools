@@ -75,9 +75,9 @@ private:												\
  * Note: Unlike a static class without instances, this macro allows creating instances through the `create` method.
  */
 #define CONTROLLED_CREATION_CLASS(ClassName, ...)       \
-private:                                                \
-    ClassName() __VA_ARGS__;                            \
 public:                                                 \
+    ClassName() __VA_ARGS__;                            \
+                                                        \
     ~ClassName() = default;                             \
     _CHAOS_DELETE_COPY_MOVE(ClassName);                 \
 public:                                                 \

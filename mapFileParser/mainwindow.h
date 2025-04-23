@@ -2,12 +2,6 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QTreeWidget>
-#include <QTableWidget>
-#include <QSplitter>
-#include <QHeaderView>
-
-#include "linkerfile.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -22,16 +16,8 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    void setupUI1();
-    void populateData();
 
 private:
     Ui::MainWindow *ui;
-    QTreeWidget* m_sectionsTree;
-    QTableWidget* m_regionsTable;
-    QTableWidget* m_globalsTable;
-
-    LinkerDescriptor ld_descr;
-    LinkerFile ld;
 };
 #endif // MAINWINDOW_H

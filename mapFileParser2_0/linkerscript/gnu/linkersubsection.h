@@ -2,7 +2,6 @@
 #define LINKERSUBSECTION_H
 
 #include "linkerdescr.h"
-#include <QStringList>
 #include <QList>
 
 class LinkerSubSection

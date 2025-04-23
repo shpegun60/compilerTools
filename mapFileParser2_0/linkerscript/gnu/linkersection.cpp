@@ -9,9 +9,10 @@ const QPair<QString, QString> LinkerSection::parseAttribute(const QString& str)
     QString name{};
     QString attr{};
     bool isAttribute = false;
+    const QString delimiters = " \n\t\r\f\v;{}=<>\"[]()+-*:";
 
     for (const QChar& c : str) {
-        if(c.isSpace()) {
+        if(delimiters.contains(c)) {
             isAttribute = true;
         }
 
@@ -31,7 +32,7 @@ const LinkerSection::Data &LinkerSection::read(const LinkerDescriptor& descr, co
         return _sections;
     }
 
-    QString sectionsContent = raw.data().value(descr.sectionBlockName);
+    const QString sectionsContent = raw.data().value(descr.sectionBlockName);
     QString globalContent{};
     int sectionStart = -1;
     int braceLevel = 0;
@@ -91,9 +92,15 @@ const LinkerSection::Data &LinkerSection::read(const LinkerDescriptor& descr, co
                 }
 
                 // Save the section with memory
-                const auto name = parseAttribute(currentSectionName.remove(':'));
-                _sections.insert(std::move(name.first), /* name */
-                                 {std::move(currentSectionBody), std::move(name.second), std::move(memoryRegion)} /* {body, attribute, mem_region} */);
+                if(!(currentSectionBody.isEmpty() && currentSectionName.isEmpty())) {
+                    auto name = parseAttribute(currentSectionName);
+                    Section seq {
+                                std::move(name.first),
+                                std::move(currentSectionBody),
+                                std::move(name.second),
+                                std::move(memoryRegion)};
+                    _sections.emplace_back(std::move(seq));
+                }
 
                 currentSectionName.clear();
                 currentSectionBody.clear();
@@ -105,15 +112,20 @@ const LinkerSection::Data &LinkerSection::read(const LinkerDescriptor& descr, co
         }
     }
 
-    if(!currentSectionBody.isEmpty()) {
+    if(!(currentSectionBody.isEmpty() && currentSectionName.isEmpty())) {
         // Save the section with memory
-        const auto name = parseAttribute(currentSectionName.remove(':'));
-        _sections.insert(std::move(name.first), /* name */
-                         {std::move(currentSectionBody), std::move(name.second), std::move(memoryRegion)} /* {body, attribute, mem_region} */);
-
+        auto name = parseAttribute(currentSectionName);
+        Section seq {
+                    std::move(name.first),
+                    std::move(currentSectionBody),
+                    std::move(name.second),
+                    std::move(memoryRegion)};
+        _sections.emplace_back(std::move(seq));
     }
 
-    _sections.insert(descr.globalName, /* name */
-                     {globalContent.trimmed(), "", ""} /* {body, attribute, mem_region} */);
+    if(!globalContent.isEmpty()) {
+        Section global {descr.globalName, globalContent.trimmed(), "", ""};
+        _sections.emplace_back(std::move(global));
+    }
     return _sections;
 }

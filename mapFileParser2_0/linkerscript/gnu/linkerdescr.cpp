@@ -1,5 +1,8 @@
 #include "linkerdescr.h"
 
+LinkerDescriptor::LinkerDescriptor() : stream(&_log)
+{}
+
 void LinkerDescriptor::remove_unnecessary(QString& script)
 {
     // Remove C-style comments /* ... */

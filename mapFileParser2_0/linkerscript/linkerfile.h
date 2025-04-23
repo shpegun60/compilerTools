@@ -4,6 +4,7 @@
 #include "linkermemory.h"
 #include "linkersubsection.h"
 #include "linkervariable.h"
+#include <QJSEngine>
 
 class LinkerFile
 {
@@ -12,7 +13,6 @@ public:
         QString                     name;
         LinkerSubSection            subnames;
         LinkerVariable              vars;
-        QString                     region;
         LinkerMemory::MemoryRegion* vma; // virtual memory address
         LinkerMemory::MemoryRegion* lma; // load memory address
     };
@@ -20,18 +20,30 @@ public:
 
     struct Region {
         LinkerMemory::MemoryRegion region;
-        QList<Section*> sections;
+        QList<const Section*> sections;
     };
 
     using Regions = QHash<QString, Region>;
 public:
     LinkerFile() = default;
-    void parse(const LinkerDescriptor&, QString&);
-    void evaluate(const LinkerDescriptor& descr);
+    void read(LinkerDescriptor&, QString&);
+    inline const auto& sections() const { return _sections; }
+    auto& regions() { return _regions; }
+    auto& globals() { return _globals; }
+    auto& regions_undef() { return _regions_undef; }
+    QJSEngine& sandbox() { return engine; }
+private:
+    void sectionBind(LinkerDescriptor& descr,
+                     Section& sec, const QString& mem_region, const QString& attribute);
+
+    void evaluateGlobals(LinkerDescriptor&);
+    void evaluateNumber(LinkerDescriptor&, QString&);
 private:
     Sections _sections{};
     Regions _regions{};
-    LinkerVariable::Data _globals{};
+    LinkerVariable _globals{};
+    QList<Region*> _regions_undef{};
+    QJSEngine engine;
 };
 
 

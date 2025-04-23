@@ -1,47 +1,26 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "symbol.h"
 #include "QDebug"
 #include <QFile>
 #include <QSet>
 
-#include "gnumapfile.h"
-// #include "gnusegment.h"
-// #include "gnusection.h"
-#include <QRegularExpression>
-
-#include "linkerraw.h"
-#include "linkersection.h"
-#include "linkermemory.h"
-
-#include "linkervariable.h"
-#include "linkersubsection.h"
-#include "linkerfile.h"
-
-
-// Assume you've installed LLD and its headers are in your INCLUDEPATH
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    setupUI1();
 
     {
-        LinkerDescriptor ld_descr = LinkerDescriptor::create();
-        LinkerFile ld;
-        // LinkerRaw linker;
-        // LinkerSection ld_section;
-        // LinkerSubSection ld_subsection;
-        // LinkerMemory ld_mem;
-        // LinkerVariable ld_var;
-
         QFile file("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\linker.ld");
         if (!file.open(QIODevice::ReadOnly)) {
             qWarning() << "do not open";
         }
         QString linkerData = file.readAll();
-        ld.parse(ld_descr, linkerData);
+        ld.read(ld_descr, linkerData);
+        qDebug().noquote() << ld_descr.log();
+        populateData();
         // ld_descr.remove_unnecessary(linkerData);
         // linker.read(ld_descr, linkerData);
         // ld_section.read(ld_descr, linker);
@@ -142,6 +121,77 @@ MainWindow::MainWindow(QWidget *parent)
     //     qDebug() << "No match";
     // }
 
+}
+
+void MainWindow::setupUI1()
+{
+    // Головний контейнер
+    QSplitter* mainSplitter = new QSplitter(Qt::Horizontal, this);
+
+    // Панель секцій
+    m_sectionsTree = new QTreeWidget(mainSplitter);
+    m_sectionsTree->setHeaderLabels({"Name", "Details"});
+    m_sectionsTree->setColumnWidth(0, 250);
+
+    // Панель регіонів
+    m_regionsTable = new QTableWidget(mainSplitter);
+    m_regionsTable->setColumnCount(4);
+    m_regionsTable->setHorizontalHeaderLabels({"Region", "Origin", "Length", "Sections"});
+
+    // Панель глобальних змінних
+    m_globalsTable = new QTableWidget(mainSplitter);
+    m_globalsTable->setColumnCount(3);
+    m_globalsTable->setHorizontalHeaderLabels({"Variable", "Value", "Attributes"});
+
+    mainSplitter->addWidget(m_sectionsTree);
+    mainSplitter->addWidget(m_regionsTable);
+    mainSplitter->addWidget(m_globalsTable);
+
+    setCentralWidget(mainSplitter);
+    resize(1280, 720);
+}
+
+void MainWindow::populateData() {
+    // Заповнення секцій
+    for (const auto& section : ld.sections()) {
+        QTreeWidgetItem* sectionItem = new QTreeWidgetItem(m_sectionsTree);
+        sectionItem->setText(0, section.name);
+        sectionItem->setText(1, QString("VMA: %1, LMA: %2")
+                                    .arg(section.vma ? section.vma->name : "N/A")
+                                    .arg(section.lma ? section.lma->name : "N/A"));
+
+        // Підсекції
+        for (const auto& sub : section.subnames.data()) {
+            QTreeWidgetItem* subItem = new QTreeWidgetItem(sectionItem);
+            subItem->setText(0, sub);
+        }
+    }
+
+    // Заповнення регіонів
+    int row = 0;
+    m_regionsTable->setRowCount(ld.regions().size());
+    for (const auto& region : ld.regions()) {
+        m_regionsTable->setItem(row, 0, new QTableWidgetItem(region.region.name));
+        m_regionsTable->setItem(row, 1, new QTableWidgetItem(region.region.origin));
+        m_regionsTable->setItem(row, 2, new QTableWidgetItem(region.region.length));
+        m_regionsTable->setItem(row, 3, new QTableWidgetItem(QString::number(region.sections.size())));
+        row++;
+    }
+
+    // Заповнення глобальних змінних
+    row = 0;
+    m_globalsTable->setRowCount(ld.globals().data().size());
+    for (const auto& var : ld.globals().data()) {
+        m_globalsTable->setItem(row, 0, new QTableWidgetItem(var.lvalue));
+        m_globalsTable->setItem(row, 1, new QTableWidgetItem(var.rvalue));
+        m_globalsTable->setItem(row, 2, new QTableWidgetItem(var.attribute));
+        row++;
+    }
+
+    // Налаштування відображення
+    m_regionsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    m_globalsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    m_sectionsTree->expandAll();
 }
 
 MainWindow::~MainWindow()

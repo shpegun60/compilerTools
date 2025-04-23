@@ -2,7 +2,6 @@
 #define LINKERVARIABLE_H
 
 #include "linkerdescr.h"
-#include <QString>
 #include <QList>
 
 class LinkerVariable
@@ -20,7 +19,7 @@ public: /* functions */
     LinkerVariable() = default;
     const Data& read(const LinkerDescriptor&, const QString &);
     inline void clear() { _variables.clear(); }
-    inline const Data& data() const { return _variables; }
+    inline Data& data() { return _variables; }
 private: /* values */
     Data _variables{};
 };

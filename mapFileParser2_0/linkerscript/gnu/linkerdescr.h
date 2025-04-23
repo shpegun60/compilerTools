@@ -4,9 +4,11 @@
 #include "macro.h"
 #include <QRegularExpression>
 #include <QString>
+#include <QStringList>
+
 
 class LinkerDescriptor {
-    CONTROLLED_CREATION_CLASS(LinkerDescriptor, = default);
+    CONTROLLED_CREATION_CLASS(LinkerDescriptor);
 public: /* values */
     /* -------------------- comments ---------------------------------*/
     static const inline QRegularExpression cCommentRegex = QRegularExpression(R"(/\*[\s\S]*?\*/)");
@@ -17,6 +19,7 @@ public: /* values */
     /* global symbols name */
     static const inline QString globalName {"@GLOBAL"};
     static const inline QString noName {"@NONAME"};
+    static const inline QString unknown {"@UNKNOWN"};
     /* specific symbols name */
     /* ------------------- section block -------------------------------*/
     static const inline QString sectionBlockName {"SECTIONS"};
@@ -28,6 +31,20 @@ public: /* values */
             QRegularExpression::MultilineOption |
             QRegularExpression::DotMatchesEverythingOption
         );
+
+    /* ------------------- For numbers -------------------------------*/
+    static const inline QRegularExpression hexRe = QRegularExpression{R"(\b(0[xX][0-9a-fA-F]+)\s*([KMGT]+)\b)",
+                                                                      QRegularExpression::CaseInsensitiveOption};
+    static const inline QRegularExpression decRe = QRegularExpression{R"(\b(?!0[xX])([0-9]+)\s*([KMGT]+)\b)",
+                                                                      QRegularExpression::CaseInsensitiveOption};
+    // Static structures for optimization
+    inline static const QHash<QChar, quint64> units = {
+        {'K', 1024ULL},
+        {'M', 1024ULL * 1024},
+        {'G', 1024ULL * 1024 * 1024},
+        {'T', 1024ULL * 1024 * 1024 * 1024}
+    };
+    static constexpr int evaluateCnt = 100;
     /* ------------------- Variable block -------------------------------*/
     static const inline QRegularExpression attrValueRegex =
         QRegularExpression(R"(\b(\w+)\s*\(\s*(.*?)\s*=\s*(.*?)\s*\)\s*;)");
@@ -42,11 +59,21 @@ public: /* values */
         QRegularExpression(R"(\s*\*\((.*?)\))");
     static const inline QStringList subsectionIgnored {globalName,
                                                       noName,
+                                                      unknown,
                                                       sectionBlockName,
                                                       memoryBlockName,
                                                       "SORT("};
 public: /* functions */
     static void remove_unnecessary(QString&);
+
+public: /* log */
+    template<typename T>
+    LinkerDescriptor& operator<<(const T& value) {stream << value; return *this;}
+    LinkerDescriptor& operator<<(QTextStreamManipulator manip) {stream << manip; return *this;}
+    inline QString& log() { return _log; }
+private:
+    QString _log{};
+    QTextStream stream;
 };
 
 

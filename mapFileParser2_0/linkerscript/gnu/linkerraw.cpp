@@ -5,7 +5,6 @@ const LinkerRaw::Data& LinkerRaw::read(const LinkerDescriptor& descr, const QStr
 {
     QString globalContent{};
     QString currentBlockName{};
-    QString currentBlockContent{};
     int braceLevel = 0;
     int blockStartPos = -1;
 
@@ -40,8 +39,8 @@ const LinkerRaw::Data& LinkerRaw::read(const LinkerDescriptor& descr, const QStr
 
             // End of block
             if (braceLevel == 0) {
-                currentBlockContent = script.mid(blockStartPos, i - blockStartPos).trimmed();
-                _blocks.insert(currentBlockName.isEmpty() ? descr.noName : currentBlockName, currentBlockContent);
+                QString currentBlockContent = script.mid(blockStartPos, i - blockStartPos).trimmed();
+                _blocks.emplace(currentBlockName.isEmpty() ? descr.noName : std::move(currentBlockName), std::move(currentBlockContent));
                 currentBlockName.clear();
                 blockStartPos = -1;
             }
@@ -55,11 +54,13 @@ const LinkerRaw::Data& LinkerRaw::read(const LinkerDescriptor& descr, const QStr
 
     // Handling an unclosed block at the end of the file
     if (braceLevel != 0 && blockStartPos != -1) {
-        currentBlockContent = script.mid(blockStartPos, script.length() - blockStartPos).trimmed();
-        _blocks.insert(currentBlockName.isEmpty() ? descr.noName : currentBlockName, currentBlockContent);
+        QString currentBlockContent = script.mid(blockStartPos, script.length() - blockStartPos).trimmed();
+        _blocks.emplace(currentBlockName.isEmpty() ? descr.noName : std::move(currentBlockName), std::move(currentBlockContent));
     }
 
     // Add global content
-    _blocks.insert(descr.globalName, globalContent.trimmed());
+    if(!globalContent.isEmpty()) {
+        _blocks.emplace(descr.globalName, globalContent.trimmed());
+    }
     return _blocks;
 }

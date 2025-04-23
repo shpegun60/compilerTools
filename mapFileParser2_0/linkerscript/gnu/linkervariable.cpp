@@ -17,7 +17,7 @@ const LinkerVariable::Data &LinkerVariable::read(const LinkerDescriptor& descr, 
                 m.capturedStart(0),
                 m.capturedEnd(0)
             };
-            _variables.append(v);
+            _variables.emplace_back(std::move(v));
         }
     }
 
@@ -49,7 +49,7 @@ const LinkerVariable::Data &LinkerVariable::read(const LinkerDescriptor& descr, 
                 _start,
                 _end
             };
-            _variables.append(v);
+            _variables.emplace_back(std::move(v));
         }
     }
 
