@@ -7,7 +7,7 @@
 6) [GccMapVisualizer Js](https://github.com/jotux/GccMapVisualizer)
 
 
-## Linker script is parsed:
+## Linker script is parsed, Value Evaluator is [QJSEngine](https://doc.qt.io/qt-6/qjsengine.html)
 <img src="window_ld.PNG" width="900" title="hover text">
 
 ## Last version
