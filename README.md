@@ -6,6 +6,10 @@
 5) [My Clang+Qt test](https://github.com/shpegun60/QtClangParser)
 6) [GccMapVisualizer Js](https://github.com/jotux/GccMapVisualizer)
 
+
+## Linker script is parsed:
+<img src="window_ld.PNG" width="600" title="hover text">
+
 ## Last version
 ```
 "  SystemCoreClock: 0x24000000 (0x4 bytes)"
