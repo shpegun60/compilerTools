@@ -8,22 +8,22 @@ const LinkerVariable::Data &LinkerVariable::read(const LinkerDescriptor& descr, 
     {
         QRegularExpressionMatchIterator it = descr.attrValueRegex.globalMatch(text);
         while (it.hasNext()) {
-            auto m = it.next();
-            // extract variable…
-            Variable v {
+            const auto m = it.next();
+            // push variable…
+            _variables.emplace_back(Variable {
                 m.captured(1).trimmed(),
                 m.captured(2).trimmed(),
                 m.captured(3).trimmed(),
                 m.capturedStart(0),
-                m.capturedEnd(0)
-            };
-            _variables.emplace_back(std::move(v));
+                m.capturedEnd(0),
+                false
+            });
         }
     }
 
     // helper to test span overlap
-    auto overlapsAttr = [&](int s, int e) {
-        for (auto &sp: _variables) {
+    const auto overlapsAttr = [&](const qsizetype s, const qsizetype e) {
+        for (const auto &sp: _variables) {
             if (!(e <= sp._start || s >= sp._end)) {  // ranges intersect
                 return true;
             }
@@ -35,21 +35,22 @@ const LinkerVariable::Data &LinkerVariable::read(const LinkerDescriptor& descr, 
     {
         QRegularExpressionMatchIterator it = descr.valueRegex.globalMatch(text);
         while (it.hasNext()) {
-            auto m = it.next();
+            const auto m = it.next();
             const auto _start = m.capturedStart(0);
             const auto _end = m.capturedEnd(0);
             if (overlapsAttr(_start, _end)) {
                 continue;   // skip anything inside ATTR(...) spans
             }
 
-            Variable v {
+            ;
+            _variables.emplace_back(Variable {
                 {},
                 m.captured(1).trimmed(),
                 m.captured(2).trimmed(),
                 _start,
-                _end
-            };
-            _variables.emplace_back(std::move(v));
+                _end,
+                false
+            });
         }
     }
 

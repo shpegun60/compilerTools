@@ -18,7 +18,9 @@ MainWindow::MainWindow(QWidget *parent)
             qWarning() << "do not open";
         }
         QString linkerData = file.readAll();
-        ld.read(ld_descr, linkerData);
+        ld.InstallDescriptor(&ld_descr);
+        ld.clear();
+        ld.read(linkerData);
         qDebug().noquote() << ld_descr.log();
         populateData();
         // ld_descr.remove_unnecessary(linkerData);
@@ -126,7 +128,8 @@ MainWindow::MainWindow(QWidget *parent)
 void MainWindow::setupUI1()
 {
     // Головний контейнер
-    QSplitter* mainSplitter = new QSplitter(Qt::Horizontal, this);
+    QSplitter* verticalSplitter = new QSplitter(Qt::Vertical, this);
+    QSplitter* mainSplitter = new QSplitter(Qt::Horizontal, verticalSplitter);
 
     // Панель секцій
     m_sectionsTree = new QTreeWidget(mainSplitter);
@@ -135,8 +138,8 @@ void MainWindow::setupUI1()
 
     // Панель регіонів
     m_regionsTable = new QTableWidget(mainSplitter);
-    m_regionsTable->setColumnCount(4);
-    m_regionsTable->setHorizontalHeaderLabels({"Region", "Origin", "Length", "Sections"});
+    m_regionsTable->setColumnCount(6);
+    m_regionsTable->setHorizontalHeaderLabels({"Region", "Origin", "Length", "Sections", "attr", "Contains"});
 
     // Панель глобальних змінних
     m_globalsTable = new QTableWidget(mainSplitter);
@@ -147,23 +150,56 @@ void MainWindow::setupUI1()
     mainSplitter->addWidget(m_regionsTable);
     mainSplitter->addWidget(m_globalsTable);
 
-    setCentralWidget(mainSplitter);
+    // Налаштування розмірів для mainSplitter
+    // m_regionsTable отримує 50% ширини, m_sectionsTree і m_globalsTable по 25%
+    int totalWidth = this->width(); // Використовуємо поточну ширину вікна
+    mainSplitter->setSizes({static_cast<int>(totalWidth * 0.25), static_cast<int>(totalWidth * 0.50),
+                            static_cast<int>(totalWidth * 0.25)});
+
+    m_logText = new QTextEdit(verticalSplitter);
+    m_logText->setReadOnly(true);
+    verticalSplitter->addWidget(mainSplitter); // Додаємо mainSplitter першим
+    verticalSplitter->addWidget(m_logText);
+
+    // Налаштування розмірів для verticalSplitter
+    // mainSplitter отримує 80% висоти, m_logText — 20%
+    int totalHeight = this->height(); // Використовуємо поточну висоту вікна
+    verticalSplitter->setSizes({static_cast<int>(totalHeight * 0.80), static_cast<int>(totalHeight * 0.20)});
+
+    setCentralWidget(verticalSplitter);
     resize(1280, 720);
 }
-
 void MainWindow::populateData() {
-    // Заповнення секцій
+
     for (const auto& section : ld.sections()) {
         QTreeWidgetItem* sectionItem = new QTreeWidgetItem(m_sectionsTree);
         sectionItem->setText(0, section.name);
-        sectionItem->setText(1, QString("VMA: %1, LMA: %2")
-                                    .arg(section.vma ? section.vma->name : "N/A")
-                                    .arg(section.lma ? section.lma->name : "N/A"));
 
-        // Підсекції
+        // VMA
+        QTreeWidgetItem* vmaItem = new QTreeWidgetItem(sectionItem);
+        vmaItem->setText(0, "VMA");
+        vmaItem->setText(1, section.vma ? section.vma->name : "N/A");
+
+        // LMA
+        QTreeWidgetItem* lmaItem = new QTreeWidgetItem(sectionItem);
+        lmaItem->setText(0, "LMA");
+        lmaItem->setText(1, section.lma ? section.lma->name : "N/A");
+
+        // Subsections
+        QTreeWidgetItem* subSectionsItem = new QTreeWidgetItem(sectionItem);
+        subSectionsItem->setText(0, "Subsections");
         for (const auto& sub : section.subnames.data()) {
-            QTreeWidgetItem* subItem = new QTreeWidgetItem(sectionItem);
+            QTreeWidgetItem* subItem = new QTreeWidgetItem(subSectionsItem);
             subItem->setText(0, sub);
+        }
+
+        // Variables
+        QTreeWidgetItem* varsItem = new QTreeWidgetItem(sectionItem);
+        varsItem->setText(0, "Variables");
+        for (const auto& var : section.vars.data()) {
+            QTreeWidgetItem* varItem = new QTreeWidgetItem(varsItem);
+            varItem->setText(0, var.lvalue);
+            varItem->setText(1, var.rvalue);
         }
     }
 
@@ -175,6 +211,25 @@ void MainWindow::populateData() {
         m_regionsTable->setItem(row, 1, new QTableWidgetItem(region.region.origin));
         m_regionsTable->setItem(row, 2, new QTableWidgetItem(region.region.length));
         m_regionsTable->setItem(row, 3, new QTableWidgetItem(QString::number(region.sections.size())));
+        m_regionsTable->setItem(row, 4, new QTableWidgetItem(region.region.attributes));
+
+        QString sections_txt{};
+        for (const auto& section : region.sections) {
+            sections_txt += section->name;
+            sections_txt += '\n';
+        }
+
+        m_regionsTable->setItem(row, 5, new QTableWidgetItem(sections_txt));
+
+        for (int i = 0; i < m_regionsTable->columnCount(); ++i) {
+            QTableWidgetItem* item = m_regionsTable->item(row, i);
+
+            if (region.region.evaluated) {
+                item->setBackground(QBrush(Qt::green));
+            } else {
+                item->setBackground(QBrush(Qt::red));
+            }
+        }
         row++;
     }
 
@@ -185,13 +240,30 @@ void MainWindow::populateData() {
         m_globalsTable->setItem(row, 0, new QTableWidgetItem(var.lvalue));
         m_globalsTable->setItem(row, 1, new QTableWidgetItem(var.rvalue));
         m_globalsTable->setItem(row, 2, new QTableWidgetItem(var.attribute));
+
+
+        for (int i = 0; i < m_globalsTable->columnCount(); ++i) {
+            QTableWidgetItem* item = m_globalsTable->item(row, i);
+
+            if (var.evaluated) {
+                item->setBackground(QBrush(Qt::green));
+            } else {
+                item->setBackground(QBrush(Qt::red));
+            }
+        }
         row++;
     }
 
     // Налаштування відображення
-    m_regionsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    m_globalsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    m_sectionsTree->expandAll();
+    m_regionsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    m_globalsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    m_regionsTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    m_regionsTable->sortByColumn(1, Qt::AscendingOrder);
+    //m_sectionsTree->expandAll();
+    m_sectionsTree->sortItems(0, Qt::AscendingOrder);
+    m_sectionsTree->verticalScrollMode();
+
+    m_logText->setText(ld_descr.log());
 }
 
 MainWindow::~MainWindow()

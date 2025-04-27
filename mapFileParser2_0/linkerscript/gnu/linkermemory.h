@@ -13,6 +13,7 @@ public: /* types */
         QString attributes; // Attributes (e.g., xrw)
         QString origin;     // Starting address (ORIGIN)
         QString length;     // Length in bytes (LENGTH)
+        bool evaluated;
     };
 
     using Data = QList<MemoryRegion>; //{name, attributes, origin, length}

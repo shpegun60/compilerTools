@@ -18,8 +18,9 @@ const LinkerRaw::Data& LinkerRaw::read(const LinkerDescriptor& descr, const QStr
             while (nameStart >= 0 && script[nameStart].isSpace()) {
                 nameStart--;
             }
+
             int nameEnd = nameStart;
-            while (nameStart >= 0 && !script[nameStart].isSpace()) {
+            while (nameStart >= 0 && !/*script[nameStart].isSpace()*/delimiters.contains(script[nameStart])) {
                 nameStart--;
             }
             currentBlockName = script.mid(nameStart + 1, nameEnd - nameStart).trimmed().toUpper();
@@ -39,8 +40,10 @@ const LinkerRaw::Data& LinkerRaw::read(const LinkerDescriptor& descr, const QStr
 
             // End of block
             if (braceLevel == 0) {
-                QString currentBlockContent = script.mid(blockStartPos, i - blockStartPos).trimmed();
-                _blocks.emplace(currentBlockName.isEmpty() ? descr.noName : std::move(currentBlockName), std::move(currentBlockContent));
+                _blocks.emplace(currentBlockName.isEmpty() ? descr.noName :
+                                    std::move(currentBlockName),
+                                script.mid(blockStartPos, i - blockStartPos).trimmed() /* currentBlockContent */);
+
                 currentBlockName.clear();
                 blockStartPos = -1;
             }
@@ -54,8 +57,9 @@ const LinkerRaw::Data& LinkerRaw::read(const LinkerDescriptor& descr, const QStr
 
     // Handling an unclosed block at the end of the file
     if (braceLevel != 0 && blockStartPos != -1) {
-        QString currentBlockContent = script.mid(blockStartPos, script.length() - blockStartPos).trimmed();
-        _blocks.emplace(currentBlockName.isEmpty() ? descr.noName : std::move(currentBlockName), std::move(currentBlockContent));
+        _blocks.emplace(currentBlockName.isEmpty() ? descr.noName :
+                            std::move(currentBlockName),
+                            script.mid(blockStartPos, script.length() - blockStartPos).trimmed() /* currentBlockContent */);
     }
 
     // Add global content

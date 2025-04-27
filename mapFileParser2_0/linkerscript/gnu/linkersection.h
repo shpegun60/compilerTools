@@ -24,6 +24,9 @@ public: /* functions */
     const QPair<QString, QString> parseAttribute(const QString&);
 private: /* values */
     Data _sections{};
+    // delimiters
+    static const inline QString name_delimiters = "\n\t\r\f\v;{}=<\"[]`";
+    static const inline QString attribute_delimiters = " \n\t\r\f\v;{}=<>\"[]()+-*:`~|&";
 };
 
 #endif // LINKERSECTION_H

@@ -6,6 +6,7 @@
 #include <QTableWidget>
 #include <QSplitter>
 #include <QHeaderView>
+#include <QTextEdit>
 
 #include "linkerfile.h"
 
@@ -30,6 +31,7 @@ private:
     QTreeWidget* m_sectionsTree;
     QTableWidget* m_regionsTable;
     QTableWidget* m_globalsTable;
+    QTextEdit* m_logText;
 
     LinkerDescriptor ld_descr;
     LinkerFile ld;

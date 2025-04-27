@@ -5,14 +5,12 @@ LinkerSection::LinkerSection() {}
 const QPair<QString, QString> LinkerSection::parseAttribute(const QString& str)
 {
     // Define the unit of measurement
-    const QString str_tmp = str.trimmed();
     QString name{};
     QString attr{};
     bool isAttribute = false;
-    const QString delimiters = " \n\t\r\f\v;{}=<>\"[]()+-*:";
 
     for (const QChar& c : str) {
-        if(delimiters.contains(c)) {
+        if(attribute_delimiters.contains(c)) {
             isAttribute = true;
         }
 
@@ -28,17 +26,18 @@ const QPair<QString, QString> LinkerSection::parseAttribute(const QString& str)
 
 const LinkerSection::Data &LinkerSection::read(const LinkerDescriptor& descr, const LinkerRaw& raw)
 {
-    if (!raw.data().contains(descr.sectionBlockName)) {
+    auto it = raw.data().find(descr.sectionBlockName);
+    if(it == raw.data().end()) {
         return _sections;
     }
 
-    const QString sectionsContent = raw.data().value(descr.sectionBlockName);
+    const QString& sectionsContent = it.value();
     QString globalContent{};
-    int sectionStart = -1;
-    int braceLevel = 0;
     QString currentSectionName{};
     QString currentSectionBody{};
     QString memoryRegion{};
+    int sectionStart = -1;
+    int braceLevel = 0;
 
     for (int i = 0; i < sectionsContent.length(); ++i) {
         const QChar c = sectionsContent[i];
@@ -51,8 +50,7 @@ const LinkerSection::Data &LinkerSection::read(const LinkerDescriptor& descr, co
                 nameStart--;
             }
             int nameEnd = nameStart;
-            const QString delimiters = "\n\t\r\f\v;{}=<>\"[]";
-            while (nameStart >= 0 && !delimiters.contains(sectionsContent[nameStart])) {
+            while (nameStart >= 0 && !name_delimiters.contains(sectionsContent[nameStart])) {
                 nameStart--;
             }
             currentSectionName.clear();
@@ -94,12 +92,11 @@ const LinkerSection::Data &LinkerSection::read(const LinkerDescriptor& descr, co
                 // Save the section with memory
                 if(!(currentSectionBody.isEmpty() && currentSectionName.isEmpty())) {
                     auto name = parseAttribute(currentSectionName);
-                    Section seq {
-                                std::move(name.first),
-                                std::move(currentSectionBody),
-                                std::move(name.second),
-                                std::move(memoryRegion)};
-                    _sections.emplace_back(std::move(seq));
+                    _sections.emplace_back(Section {
+                                                   std::move(name.first),
+                                                   std::move(currentSectionBody),
+                                                   std::move(name.second),
+                                                   std::move(memoryRegion)});
                 }
 
                 currentSectionName.clear();
@@ -115,17 +112,15 @@ const LinkerSection::Data &LinkerSection::read(const LinkerDescriptor& descr, co
     if(!(currentSectionBody.isEmpty() && currentSectionName.isEmpty())) {
         // Save the section with memory
         auto name = parseAttribute(currentSectionName);
-        Section seq {
-                    std::move(name.first),
-                    std::move(currentSectionBody),
-                    std::move(name.second),
-                    std::move(memoryRegion)};
-        _sections.emplace_back(std::move(seq));
+        _sections.emplace_back(Section {
+                                       std::move(name.first),
+                                       std::move(currentSectionBody),
+                                       std::move(name.second),
+                                       std::move(memoryRegion)});
     }
 
     if(!globalContent.isEmpty()) {
-        Section global {descr.globalName, globalContent.trimmed(), "", ""};
-        _sections.emplace_back(std::move(global));
+        _sections.emplace_back(Section {descr.globalName, globalContent.trimmed(), "", ""});
     }
     return _sections;
 }

@@ -2,9 +2,8 @@
 
 LinkerSubSection::LinkerSubSection() {}
 
-void LinkerSubSection::append(const LinkerDescriptor& descr, const QString& txt)
+void LinkerSubSection::append(const LinkerDescriptor& descr, const QString& name)
 {
-    const QString name = txt.trimmed();
     for (auto &ignored: descr.subsectionIgnored) {
         if(name.startsWith(ignored)) {
             return;
@@ -19,12 +18,16 @@ void LinkerSubSection::append(const LinkerDescriptor& descr, const QString& txt)
     _subsections.emplace_back(name);
 }
 
-const LinkerSubSection::Data &LinkerSubSection::read(const LinkerDescriptor& descr, const QString& text)
+const LinkerSubSection::Data& LinkerSubSection::read(const LinkerDescriptor& descr, const QString& text)
 {
     QRegularExpressionMatchIterator it = descr.subsectionRegex.globalMatch(text);
     while (it.hasNext()) {
-        auto m = it.next();
-        append(descr, m.captured(1));
+        const auto m = it.next();
+        const QStringList names = m.captured(1).split(' ', Qt::SkipEmptyParts);
+
+        for(auto& it : names) {
+            append(descr, it.trimmed());
+        }
     }
     return _subsections;
 }

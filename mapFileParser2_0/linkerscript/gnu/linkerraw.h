@@ -15,6 +15,7 @@ public: /* functions */
     inline void clear() { _blocks.clear(); }
 private: /* values */
     Data _blocks{};
+    static const inline QString delimiters = " \n\t\r\f\v;{}=<>\"[]()+-*:.\\/&|`~";
 };
 
 #endif // LINKERRAW_H

@@ -13,6 +13,7 @@ public: /* types */
         QString rvalue;         // e.g. "0x300"
         qsizetype _start;       // start cursor
         qsizetype _end;         // end cursor
+        bool evaluated;
     };
     using Data = QList<Variable>;
 public: /* functions */
@@ -20,6 +21,7 @@ public: /* functions */
     const Data& read(const LinkerDescriptor&, const QString &);
     inline void clear() { _variables.clear(); }
     inline Data& data() { return _variables; }
+    inline const Data& data() const { return _variables; }
 private: /* values */
     Data _variables{};
 };
