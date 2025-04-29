@@ -9,7 +9,7 @@ namespace compiler_tools::gnu {
 bool LinkerFileReader::loadDescriptorFromFile(const QString& file)
 {
     (void)file;
-    descr.isValidated = false;
+    LinkerDescriptor::invalidate(&descr);
     return false;
 }
 

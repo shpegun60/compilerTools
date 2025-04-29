@@ -82,6 +82,7 @@ public: /* values */
 public: /* functions */
     static void remove_unnecessary(QString&);
     static bool validate(LinkerDescriptor* const descr, QTextStream& log);
+    static void invalidate(LinkerDescriptor* const descr);
 };
 
 } /* namespace compiler_tools::gnu */

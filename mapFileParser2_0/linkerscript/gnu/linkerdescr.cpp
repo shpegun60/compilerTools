@@ -107,5 +107,14 @@ bool LinkerDescriptor::validate(LinkerDescriptor* const descr, QTextStream& log)
     return ok;
 }
 
+void LinkerDescriptor::invalidate(LinkerDescriptor* const descr)
+{
+    if (!descr) {
+        qCritical() << "[ERROR] Null descriptor pointer";
+        return;
+    }
+    descr->isValidated = false;
+}
+
 
 } /* namespace compiler_tools::gnu */
