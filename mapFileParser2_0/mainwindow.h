@@ -8,13 +8,15 @@
 #include <QHeaderView>
 #include <QTextEdit>
 
-#include "linkerfile.h"
+#include "ilinkerfile.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
 }
 QT_END_NAMESPACE
+
+using namespace compiler_tools;
 
 class MainWindow : public QMainWindow
 {
@@ -33,7 +35,9 @@ private:
     QTableWidget* m_globalsTable;
     QTextEdit* m_logText;
 
-    LinkerDescriptor ld_descr;
-    LinkerFile ld;
+    ILinkerFile* ld;
+
+    // gnu::LinkerDescriptor ld_descr;
+    // gnu::LinkerFile ld;
 };
 #endif // MAINWINDOW_H

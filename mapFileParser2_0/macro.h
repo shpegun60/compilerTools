@@ -77,7 +77,6 @@ private:												\
 #define CONTROLLED_CREATION_CLASS(ClassName, ...)       \
 public:                                                 \
     ClassName() __VA_ARGS__;                            \
-                                                        \
     ~ClassName() = default;                             \
     _CHAOS_DELETE_COPY_MOVE(ClassName);                 \
 public:                                                 \

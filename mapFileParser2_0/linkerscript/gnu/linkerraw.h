@@ -4,6 +4,8 @@
 #include "linkerdescr.h"
 #include <QHash>
 
+namespace compiler_tools::gnu {
+
 class LinkerRaw
 {
 public: /* types */
@@ -17,5 +19,7 @@ private: /* values */
     Data _blocks{};
     static const inline QString delimiters = " \n\t\r\f\v;{}=<>\"[]()+-*:.\\/&|`~";
 };
+
+} /* namespace compiler_tools::gnu */
 
 #endif // LINKERRAW_H

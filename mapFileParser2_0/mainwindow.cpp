@@ -4,6 +4,8 @@
 #include <QFile>
 #include <QSet>
 
+#include "linkerfilefactory.h"
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -13,15 +15,17 @@ MainWindow::MainWindow(QWidget *parent)
     setupUI1();
 
     {
-        QFile file("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\linker.ld");
-        if (!file.open(QIODevice::ReadOnly)) {
-            qWarning() << "do not open";
-        }
-        QString linkerData = file.readAll();
-        ld.InstallDescriptor(&ld_descr);
-        ld.clear();
-        ld.read(linkerData);
-        qDebug().noquote() << ld_descr.log();
+        ld = LinkerFileFactory::create("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\linker.ld");
+        // QFile file("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\linker.ld");
+        // if (!file.open(QIODevice::ReadOnly)) {
+        //     qWarning() << "do not open";
+        // }
+        // QString linkerData = file.readAll();
+        // ld.InstallDescriptor(&ld_descr);
+        // ld.clear();
+        // ld.read(linkerData);
+        // qDebug().noquote() << ld.getlog();
+
         populateData();
         // ld_descr.remove_unnecessary(linkerData);
         // linker.read(ld_descr, linkerData);
@@ -133,8 +137,8 @@ void MainWindow::setupUI1()
 
     // Панель секцій
     m_sectionsTree = new QTreeWidget(mainSplitter);
-    m_sectionsTree->setHeaderLabels({"Name", "Details"});
-    m_sectionsTree->setColumnWidth(0, 250);
+    m_sectionsTree->setHeaderLabels({"Name", "Details", "Attr"});
+    m_sectionsTree->setColumnWidth(0, 150);
 
     // Панель регіонів
     m_regionsTable = new QTableWidget(mainSplitter);
@@ -171,42 +175,73 @@ void MainWindow::setupUI1()
 }
 void MainWindow::populateData() {
 
-    for (const auto& section : ld.sections()) {
+    for (const auto& section : ld->sections()) {
         QTreeWidgetItem* sectionItem = new QTreeWidgetItem(m_sectionsTree);
         sectionItem->setText(0, section.name);
 
         // VMA
         QTreeWidgetItem* vmaItem = new QTreeWidgetItem(sectionItem);
         vmaItem->setText(0, "VMA");
-        vmaItem->setText(1, section.vma ? section.vma->name : "N/A");
+        if(section.vma.size() == 0) {
+            vmaItem->setText(1, "N/A");
+        } else if(section.vma.size() == 1) {
+            vmaItem->setText(1, section.vma[0]->name);
+        } else {
+            for (const auto& vma_it : section.vma) {
+                QTreeWidgetItem* subItem = new QTreeWidgetItem(vmaItem);
+                subItem->setText(0, vma_it->name);
+            }
+        }
+
+        //vmaItem->setText(1, section.vma ? section.vma->name : "N/A");
 
         // LMA
         QTreeWidgetItem* lmaItem = new QTreeWidgetItem(sectionItem);
         lmaItem->setText(0, "LMA");
-        lmaItem->setText(1, section.lma ? section.lma->name : "N/A");
+
+        if(section.lma.size() == 0) {
+            lmaItem->setText(1, "N/A");
+        } else if(section.lma.size() == 1) {
+            lmaItem->setText(1, section.lma[0]->name);
+        } else {
+            for (const auto& lma_it : section.lma) {
+                QTreeWidgetItem* subItem = new QTreeWidgetItem(lmaItem);
+                subItem->setText(0, lma_it->name);
+            }
+        }
 
         // Subsections
         QTreeWidgetItem* subSectionsItem = new QTreeWidgetItem(sectionItem);
         subSectionsItem->setText(0, "Subsections");
-        for (const auto& sub : section.subnames.data()) {
-            QTreeWidgetItem* subItem = new QTreeWidgetItem(subSectionsItem);
-            subItem->setText(0, sub);
+        if(section.subnames.size() == 0) {
+            subSectionsItem->setText(1, "N/A");
+        } else {
+            for (const auto& sub : section.subnames) {
+                QTreeWidgetItem* subItem = new QTreeWidgetItem(subSectionsItem);
+                subItem->setText(0, sub);
+            }
         }
+
 
         // Variables
         QTreeWidgetItem* varsItem = new QTreeWidgetItem(sectionItem);
         varsItem->setText(0, "Variables");
-        for (const auto& var : section.vars.data()) {
-            QTreeWidgetItem* varItem = new QTreeWidgetItem(varsItem);
-            varItem->setText(0, var.lvalue);
-            varItem->setText(1, var.rvalue);
+        if(section.vars.size() == 0) {
+            varsItem->setText(1, "N/A");
+        } else {
+            for (const auto& var : section.vars) {
+                QTreeWidgetItem* varItem = new QTreeWidgetItem(varsItem);
+                varItem->setText(0, var.lvalue);
+                varItem->setText(1, var.rvalue);
+                varItem->setText(2, var.attribute);
+            }
         }
     }
 
     // Заповнення регіонів
     int row = 0;
-    m_regionsTable->setRowCount(ld.regions().size());
-    for (const auto& region : ld.regions()) {
+    m_regionsTable->setRowCount(ld->regions().size());
+    for (const auto& region : ld->regions()) {
         m_regionsTable->setItem(row, 0, new QTableWidgetItem(region.region.name));
         m_regionsTable->setItem(row, 1, new QTableWidgetItem(region.region.origin));
         m_regionsTable->setItem(row, 2, new QTableWidgetItem(region.region.length));
@@ -215,8 +250,14 @@ void MainWindow::populateData() {
 
         QString sections_txt{};
         for (const auto& section : region.sections) {
-            sections_txt += section->name;
+            sections_txt += section.second->name;
+            if(section.first != ILinkerFile::None) {
+                sections_txt += " (";
+                sections_txt += section.first == ILinkerFile::LMA ? "LMA" : "VMA";
+                sections_txt += ")";
+            }
             sections_txt += '\n';
+
         }
 
         m_regionsTable->setItem(row, 5, new QTableWidgetItem(sections_txt));
@@ -224,7 +265,7 @@ void MainWindow::populateData() {
         for (int i = 0; i < m_regionsTable->columnCount(); ++i) {
             QTableWidgetItem* item = m_regionsTable->item(row, i);
 
-            if (region.region.evaluated) {
+            if (region.region.isEvaluated) {
                 item->setBackground(QBrush(Qt::green));
             } else {
                 item->setBackground(QBrush(Qt::red));
@@ -235,8 +276,8 @@ void MainWindow::populateData() {
 
     // Заповнення глобальних змінних
     row = 0;
-    m_globalsTable->setRowCount(ld.globals().data().size());
-    for (const auto& var : ld.globals().data()) {
+    m_globalsTable->setRowCount(ld->globals().size());
+    for (const auto& var : ld->globals()) {
         m_globalsTable->setItem(row, 0, new QTableWidgetItem(var.lvalue));
         m_globalsTable->setItem(row, 1, new QTableWidgetItem(var.rvalue));
         m_globalsTable->setItem(row, 2, new QTableWidgetItem(var.attribute));
@@ -245,7 +286,7 @@ void MainWindow::populateData() {
         for (int i = 0; i < m_globalsTable->columnCount(); ++i) {
             QTableWidgetItem* item = m_globalsTable->item(row, i);
 
-            if (var.evaluated) {
+            if (var.isEvaluated) {
                 item->setBackground(QBrush(Qt::green));
             } else {
                 item->setBackground(QBrush(Qt::red));
@@ -263,10 +304,12 @@ void MainWindow::populateData() {
     m_sectionsTree->sortItems(0, Qt::AscendingOrder);
     m_sectionsTree->verticalScrollMode();
 
-    m_logText->setText(ld_descr.log());
+    m_logText->setText(ld->getlog());
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+    delete ld;
+    LinkerFileFactory::clearCache();
 }

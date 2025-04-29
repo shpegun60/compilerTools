@@ -1,5 +1,6 @@
 #include "linkerraw.h"
 
+namespace compiler_tools::gnu {
 
 const LinkerRaw::Data& LinkerRaw::read(const LinkerDescriptor& descr, const QString& script)
 {
@@ -68,3 +69,5 @@ const LinkerRaw::Data& LinkerRaw::read(const LinkerDescriptor& descr, const QStr
     }
     return _blocks;
 }
+
+} /* namespace compiler_tools::gnu */

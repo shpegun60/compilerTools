@@ -1,15 +1,16 @@
 #ifndef LINKERDESCR_H
 #define LINKERDESCR_H
 
-#include "macro.h"
 #include <QRegularExpression>
-#include <QString>
-#include <QStringList>
+#include <QtContainerFwd>
 
+namespace compiler_tools::gnu {
 
 class LinkerDescriptor {
-    CONTROLLED_CREATION_CLASS(LinkerDescriptor);
 public: /* values */
+    LinkerDescriptor() = default;
+    ~LinkerDescriptor() = default;
+
     /* -------------------- comments ---------------------------------*/
     static const inline QRegularExpression cCommentRegex = QRegularExpression(R"(/\*[\s\S]*?\*/)");
     static const inline QRegularExpression cppCommentRegex = QRegularExpression(R"(//[^\n]*)");
@@ -76,19 +77,13 @@ public: /* values */
     static const inline QRegularExpression tokenRe{R"(\b(\w+)\b)"}; // Extracts words from letters, numbers, and underscores
     static const inline QRegularExpression atRe{R"(^AT\(|^AT>)"};   // Checks for "AT(" or "AT>"
 
+    /* static flag validated */
+    bool isValidated = false;
 public: /* functions */
     static void remove_unnecessary(QString&);
-    static bool validate(LinkerDescriptor* descr);
-
-public: /* log */
-    template<typename T>
-    LinkerDescriptor& operator<<(const T& value) {stream << value; return *this;}
-    LinkerDescriptor& operator<<(QTextStreamManipulator manip) {stream << manip; return *this;}
-    inline QString& log() { return _log; }
-private:
-    QString _log{};
-    QTextStream stream;
+    static bool validate(LinkerDescriptor* const descr, QTextStream& log);
 };
 
+} /* namespace compiler_tools::gnu */
 
 #endif // LINKERDESCR_H

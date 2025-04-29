@@ -2,7 +2,8 @@
 #define LINKERSECTION_H
 
 #include "linkerraw.h"
-#include <QList>
+
+namespace compiler_tools::gnu {
 
 class LinkerSection
 {
@@ -28,5 +29,7 @@ private: /* values */
     static const inline QString name_delimiters = "\n\t\r\f\v;{}=<\"[]`";
     static const inline QString attribute_delimiters = " \n\t\r\f\v;{}=<>\"[]()+-*:`~|&";
 };
+
+} /* namespace compiler_tools::gnu */
 
 #endif // LINKERSECTION_H

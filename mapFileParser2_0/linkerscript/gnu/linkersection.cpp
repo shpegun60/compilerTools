@@ -1,5 +1,7 @@
 #include "linkersection.h"
 
+namespace compiler_tools::gnu {
+
 LinkerSection::LinkerSection() {}
 
 const QPair<QString, QString> LinkerSection::parseAttribute(const QString& str)
@@ -124,3 +126,5 @@ const LinkerSection::Data &LinkerSection::read(const LinkerDescriptor& descr, co
     }
     return _sections;
 }
+
+} /* namespace compiler_tools::gnu */

@@ -1,5 +1,7 @@
 #include "linkermemory.h"
 
+namespace compiler_tools::gnu {
+
 const LinkerMemory::Data& LinkerMemory::read(const LinkerDescriptor& descr, const LinkerRaw& raw)
 {
     auto it = raw.data().find(descr.memoryBlockName);
@@ -13,7 +15,7 @@ const LinkerMemory::Data& LinkerMemory::read(const LinkerDescriptor& descr, cons
     while (matchIter.hasNext()) {
         const auto match = matchIter.next();
 
-        memoryRegions.emplace_back(MemoryRegion {
+        memoryRegions.emplace_back(ILinkerFile::MemoryRegion {
             match.captured(1).trimmed(), // name
             match.captured(2).trimmed(), // attributes
             match.captured(3).trimmed(), // origin
@@ -23,3 +25,5 @@ const LinkerMemory::Data& LinkerMemory::read(const LinkerDescriptor& descr, cons
     }
     return memoryRegions;
 }
+
+} /* namespace compiler_tools::gnu */

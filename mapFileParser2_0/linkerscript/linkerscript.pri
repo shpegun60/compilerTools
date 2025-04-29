@@ -5,7 +5,12 @@ include(gnu/gnulinker.pri)
 include(clang/clanglinker.pri)
 
 HEADERS += \
-    $$PWD/linkerfile.h
+    $$PWD/ilinkerfile.h \
+    $$PWD/ilinkerreader.h \
+    $$PWD/linkerfilefactory.h \
+    $$PWD/linkerreaderfactory.h
 
 SOURCES += \
-    $$PWD/linkerfile.cpp
+    $$PWD/ilinkerfile.cpp \
+    $$PWD/linkerfilefactory.cpp \
+    $$PWD/linkerreaderfactory.cpp

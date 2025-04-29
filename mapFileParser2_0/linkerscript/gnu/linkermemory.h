@@ -1,22 +1,16 @@
 #ifndef LINKERMEMORY_H
 #define LINKERMEMORY_H
 
+#include "linkerdescr.h"
 #include "linkerraw.h"
-#include <QList>
+#include "ilinkerfile.h"
+
+namespace compiler_tools::gnu {
 
 class LinkerMemory
 {
 public: /* types */
-    // Structure for storing data about a single memory region
-    struct MemoryRegion {
-        QString name;
-        QString attributes; // Attributes (e.g., xrw)
-        QString origin;     // Starting address (ORIGIN)
-        QString length;     // Length in bytes (LENGTH)
-        bool evaluated;
-    };
-
-    using Data = QList<MemoryRegion>; //{name, attributes, origin, length}
+    using Data = QList<ILinkerFile::MemoryRegion>; //{name, attributes, origin, length}
 public: /* functions */
     LinkerMemory() = default;
     const Data& read(const LinkerDescriptor&, const LinkerRaw&);
@@ -25,5 +19,7 @@ public: /* functions */
 private: /* values */
     Data memoryRegions{};
 };
+
+} /* namespace compiler_tools::gnu */
 
 #endif // LINKERMEMORY_H
