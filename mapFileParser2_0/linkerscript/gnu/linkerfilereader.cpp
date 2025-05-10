@@ -26,7 +26,8 @@ bool LinkerFileReader::read(ILinkerFile& file, QString& script)
     file.log() << "[INFO] Start GNU-Ld read" << Qt::endl;
     file.log() << "----------------------------------------------------" << Qt::endl;
 
-
+    // Step 0: Clear file
+    file.clear();
     // Step 1: Remove comments and unnecessary parts
     descr.remove_unnecessary(script);
     file.log() << "[read] Comments and unnecessary parts removed from script." << Qt::endl;
@@ -73,6 +74,8 @@ bool LinkerFileReader::read(ILinkerFile& file, QString& script)
         file._sections.reserve(ld_section.data().size());
         file.log() << "[read] Reserved space for " << ld_section.data().size() << " sections." << Qt::endl;
 
+        // first iteration build Qhash data
+        file.log() << "[read] Build sections -------------" << Qt::endl;
         for (const auto& it : ld_section.data()) {
             // Read subsections
             ILinkerFile::SubSections sub{};
@@ -92,6 +95,10 @@ bool LinkerFileReader::read(ILinkerFile& file, QString& script)
                                                 {},
                                                 {}
                                             });
+        }
+
+        file.log() << "[read] Bind sections -------------" << Qt::endl;
+        for (const auto& it : ld_section.data()) {
             sectionBind(file, file._sections[it.name], it.mem_region, it.attribute);
             file.log() << "[read] Section \"" << it.name << "\" processed and bound." << Qt::endl;
         }

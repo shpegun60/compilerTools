@@ -7,6 +7,9 @@
 #include "linkerfilefactory.h"
 
 
+#include "mapfilereader.h"
+#include "HashIndex.h"
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -14,78 +17,126 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     setupUI1();
 
+    // linker reader
     {
         ld = LinkerFileFactory::create("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\linker.ld");
-        // QFile file("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\linker.ld");
-        // if (!file.open(QIODevice::ReadOnly)) {
-        //     qWarning() << "do not open";
-        // }
-        // QString linkerData = file.readAll();
-        // ld.InstallDescriptor(&ld_descr);
-        // ld.clear();
-        // ld.read(linkerData);
-        // qDebug().noquote() << ld.getlog();
-
         populateData();
-        // ld_descr.remove_unnecessary(linkerData);
-        // linker.read(ld_descr, linkerData);
-        // ld_section.read(ld_descr, linker);
-        // ld_subsection.read(ld_descr, ld_section.data().value(".text").body);
-        // ld_subsection.append(ld_descr, ".text");
-        // ld_mem.read(ld_descr, linker);
+    }
 
-        // ld_var.read(ld_descr, linker.data().value(ld_descr.globalName));
-        // //ld_var.read(ld_descr, ld_section.data().value("._user_heap_stack").body);
+    // map reader
+    {
+        IMapFile mapfile;
+        gnu::MapFileReader reader;
 
 
-        // for (auto it = linker.data().begin(); it != linker.data().end(); ++it) {
-        //     qDebug() << "Blockkk:" << it.key()
-        //     << "\nContent:" << it.value()
-        //     << "\n";
+        QFile file("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\output.map");
+        if (!file.open(QIODevice::ReadOnly)) {
+            qWarning() << "do not open";
+        }
+
+        QString mapData = QString::fromUtf8(file.readAll());
+        reader.read(mapfile, mapData);
+        qDebug() << "END1111111111111----------";
+        file.close();
+    }
+
+    {
+
+        // Create a HashIndex mapping QString to int
+        HashIndex<QString, int> idx;
+
+        // Insert some values
+        auto iA = idx.insert("apple", 10);
+        auto iB = idx.insert("banana", 20);
+        auto iC = idx.insert("cherry", 30);
+        qDebug() << "Inserted indices:" << iA << iB << iC;
+
+        // Lookup by key
+        auto opt = idx.indexOf("banana");
+        auto aaaa = (opt > 0) ? (*idx.at(opt)) : -1;
+        qDebug() << "Value for 'banana' at index" << opt << ":" <<  aaaa;
+
+        // operator[] usage
+        idx["date"] = idx["cherry"] = 40;
+        qDebug() << "date ->" << idx["date"];
+
+        // Iterate over all active elements
+        qDebug() << "All key-value pairs:";
+        for (auto it = idx.begin(); it != idx.end(); ++it) {
+            int index = it.getIndex(); // direct access to index
+            qDebug() << "  [" << index << "]" << idx.keyAt(index) << ":" << *it;
+        }
+
+        qDebug() << "range based";
+        for (auto [key, value] : idx) {
+            qDebug() << key << ":" << value;
+        }
+
+        // Remove an element
+        idx.remove("banana");
+        qDebug() << "After removing 'banana': size=" << idx.size();
+        qDebug() << "range based";
+        for (auto [key, value] : idx) {
+            qDebug() << key << ":" << value;
+        }
+
+
+        // Compact storage
+        idx.compact();
+        qDebug() << "After compact: size=" << idx.size();
+
+        // Validate holes are gone
+        for (auto it = idx.begin(); it != idx.end(); ++it) {
+            int index = it.getIndex();
+            qDebug() << "  [" << index << "]" << idx.keyAt(index) << ":" << *it;
+        }
+        // 1. Створення контейнера з ключами QString та значеннями int
+        // HashIndex<QString, int> container;
+
+        // // 2. Вставка елементів
+        // qDebug() << "Inserting elements:";
+        // int appleIdx = container.insert("apple", 10);
+        // int bananaIdx = container.insert("banana", 20);
+        // qDebug() << "  apple index:" << appleIdx << ", banana index:" << bananaIdx;
+
+        // // 3. Спроба вставити дубльований ключ
+        // int invalidIdx = container.insert("apple", 30);
+        // qDebug() << "  Duplicate 'apple' insert result:" << invalidIdx << "(INVALID)";
+
+        // // 4. Доступ за індексом
+        // qDebug() << "\nAccess by index:";
+        // qDebug() << "  apple value at index" << appleIdx << ":" << *container.at(appleIdx);
+        // qDebug() << "  key at index" << bananaIdx << ":" << container.keyAt(bananaIdx);
+
+        // // 5. Доступ за ключем через operator[]
+        // qDebug() << "\nAccess by key:";
+        // qDebug() << "  container['apple'] =" << container["apple"];
+        // container["cherry"] = 50; // Автоматично додасть "cherry" зі значенням 50
+        // qDebug() << "  container['cherry'] after auto-insert:" << container["cherry"];
+
+        // // 6. Ітерація по активним елементам
+        // qDebug() << "\nIterating elements:";
+        // for (const auto& value : container) {
+        //     qDebug() << "  Value:" << value;
         // }
-        // qDebug() << "Sections ------------------------------------";
-        // for (auto it = ld_section.data().begin(); it != ld_section.data().end(); ++it) {
-        //     qDebug() << "Section:"<< it.key();
-        //     qDebug() << "Attribute:"<< it.value().attribute
-        //              << "\nContent:" << it.value().body
-        //              <<"\nMemory:" << it.value().mem_region << "\n";
-        //     qDebug() << "subsection ------------------------------------";
-        //     LinkerSubSection sub;
-        //     sub.read(ld_descr, it.value().body);
-        //     sub.append(ld_descr, it.key());
-        //     for(const auto& var : sub.data()) {
-        //         qDebug() << var;
-        //     }
 
-        //     qDebug() << "variables ------------------------------------";
-        //     LinkerVariable var;
-        //     var.read(ld_descr, it.value().body);
-        //     for(const auto& vartt : var.data()) {
-        //         qDebug() << "lval: " << vartt.lvalue;
-        //         qDebug() << "rval: " << vartt.rvalue;
-        //         qDebug() << "attr: " << vartt.attribute <<'\n';
-        //     }
-        //     qDebug() << "\n";
-        // }
+        // // 7. Видалення елемента
+        // qDebug() << "\nRemoving 'banana':";
+        // bool removed = container.remove("banana");
+        // qDebug() << "  Removal success:" << removed;
+        // qDebug() << "  Size after removal:" << container.size();
 
-        // qDebug() << "Memries ------------------------------------";
-        // for (auto it = ld_mem.data().begin(); it != ld_mem.data().end(); ++it) {
-        //     qDebug() << "Name:" << it->name
-        //     << "Attributes:" << it->attributes
-        //     << "Begin:" << it->origin//QString("0x%1").arg(it.value().origin, 8, 16, QChar('0'))
-        //     << "Length:" << it->length << "Bytes";
-        // }
-        // qDebug() << "Variables ------------------------------------";
-        // for(const auto& var : ld_var.data()) {
-        //     qDebug() << "lval: " << var.lvalue;
-        //     qDebug() << "rval: " << var.rvalue;
-        //     qDebug() << "attr: " << var.attribute <<'\n';
-        // }
+        // // 8. Вставка нового елемента після видалення (має перевикористати індекс)
+        // //int orangeIdx = container.insert("orange", 100);
+        // //qDebug() << "  'orange' inserted at recycled index:" << orangeIdx;
 
-        // qDebug() << "subsection ------------------------------------";
-        // for(const auto& var : ld_subsection.data()) {
-        //     qDebug() << var;
-        // }
+        // // 9. Виклик компактного переформатування
+        // qDebug() << "\nBefore compacting:";
+        // qDebug() << "  Elements size:" << container.getElements().size();
+        // container.compact();
+        // qDebug() << "After compacting:";
+        // qDebug() << "  Elements size:" << container.getElements().size();
+        // qDebug() << "  container['orange'] new index:" << container.indexOf("orange");
     }
 
     // {

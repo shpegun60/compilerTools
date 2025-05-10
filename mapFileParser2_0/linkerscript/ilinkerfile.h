@@ -16,6 +16,7 @@ class LinkerFileReader;
 
 class ILinkerFile
 {
+    friend class ILinkerReader;
     friend class gnu::LinkerFileReader;
     friend class clang::LinkerFileReader;
 public:

@@ -2,13 +2,13 @@ INCLUDEPATH += $$PWD
 DEPENDPATH += $$PWD
 
 SOURCES +=  \
-    $$PWD/gnudescriptor.cpp \
-    $$PWD/gnumapfile.cpp \
-    $$PWD/gnusection.cpp \
-    $$PWD/gnusegment.cpp
+    $$PWD/mapdescriptor.cpp \
+    $$PWD/mapfilereader.cpp \
+    $$PWD/mapraw.cpp \
+    $$PWD/mapsymbol.cpp
 
 HEADERS += \
-    $$PWD/gnudescriptor.h \
-    $$PWD/gnumapfile.h \
-    $$PWD/gnusection.h \
-    $$PWD/gnusegment.h
+    $$PWD/mapdescriptor.h \
+    $$PWD/mapfilereader.h \
+    $$PWD/mapraw.h \
+    $$PWD/mapsymbol.h

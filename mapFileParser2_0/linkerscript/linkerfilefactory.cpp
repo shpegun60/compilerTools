@@ -9,7 +9,7 @@ ILinkerFile* LinkerFileFactory::create(const QString& filePath)
 {
     ILinkerFile* linkerFile = new ILinkerFile();
     if(linkerFile) {
-        read(*linkerFile, filePath, true);
+        read(*linkerFile, filePath);
     }
 
     return linkerFile;
@@ -20,7 +20,7 @@ ILinkerFile* LinkerFileFactory::create()
     return new ILinkerFile();
 }
 
-bool LinkerFileFactory::read(ILinkerFile& linkerFile, const QString &filePath, bool clear)
+bool LinkerFileFactory::read(ILinkerFile& linkerFile, const QString &filePath)
 {
     if(filePath.isEmpty()) {
         return false;
@@ -46,9 +46,7 @@ bool LinkerFileFactory::read(ILinkerFile& linkerFile, const QString &filePath, b
         return false;
     }
 
-    if(clear) {
-        linkerFile.clear();
-    }
+    linkerFile.clear();
 
     // Отримайте читача з кешу
     if (auto* reader = LinkerReaderFactory::getReader(type)) {

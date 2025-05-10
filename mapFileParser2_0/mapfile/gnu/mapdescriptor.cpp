@@ -1,0 +1,98 @@
+#include "mapdescriptor.h"
+
+namespace compiler_tools::gnu {
+
+bool MapDescriptor::isEnd(const QString& line) const
+{
+    for (const QString &name : memMapEndMarkers) {
+        if (line.startsWith(name)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool MapDescriptor::isIgnore(const QString& line) const
+{
+    for (const QString &name : memMapIgnoreMarkers) {
+        if (line.startsWith(name)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool MapDescriptor::isFill(const QString& line) const
+{
+    if (line.contains(fillIdentifier)) {
+        return true;
+    }
+    return false;
+}
+
+std::pair<QString, quint64> MapDescriptor::readLineAddress(const QString& line) const
+{
+    const QRegularExpressionMatch match = hexRegex.match(line);
+    if (match.hasMatch()) {
+        bool ok = false;
+        const quint64 addr = match.captured(1).toULongLong(&ok, 16);
+
+        if(ok) {
+            return {QString("0x%1").arg(addr, 0, 16), addr};
+        } else {
+            return {"-1", 0};
+        }
+    }
+    return {"-1", 0};
+}
+
+
+quint64 MapDescriptor::readLineSize(const QString& line) const
+{
+    static QRegularExpression re("0[xX][0-9a-fA-F]+");
+    QRegularExpressionMatchIterator it = re.globalMatch(line);
+    int count = 0;
+    while (it.hasNext()) {
+        const QRegularExpressionMatch match = it.next();
+        ++count;
+        if (count == 2) {
+            bool ok = false;
+            const quint64 val = match.captured(0).toULongLong(&ok, 16);
+            if(ok) {
+                return val;
+            }
+        }
+    }
+    return 0;
+}
+
+// The function reads the name (the part of the string after the address) and returns it, trimming off any extra spaces.
+QString MapDescriptor::readLineName(const QString &s) const
+{
+    static QRegularExpression re(R"(0[xX][0-9a-fA-F]+\s+(.*))");
+    QRegularExpressionMatch match = re.match(s);
+    if (match.hasMatch()) {
+        return match.captured(1).trimmed();
+    }
+    return QString();
+}
+
+
+//! Reads the path to .o or .a(…) from a line
+//! @param line input line (e.g., a line from a linker map)
+//! @return path with extension .o or .a and optional (member.o), or "" if not found
+QString MapDescriptor::readLinePath(const QString &line) const
+{
+    // Pattern catches “no spaces+.o” or “.a” with optional “(member.o)”
+    static const QRegularExpression re(
+        R"(([^\s]+?\.(?:o|a)(?:\([^)]+\))?))"
+        );
+    QRegularExpressionMatch m = re.match(line);
+    if (m.hasMatch()) {
+        return m.captured(1).trimmed();
+    }
+    return QString();
+}
+
+
+}

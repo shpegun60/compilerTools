@@ -18,7 +18,7 @@ public: /* types */
 public: /* functions */
     LinkerSection();
     const Data& read(const LinkerDescriptor&, const LinkerRaw&);
-    inline const Data& data() { return _sections; }
+    inline const Data& data() const { return _sections; }
     inline void clear() { _sections.clear(); }
 
 public: /* functions */

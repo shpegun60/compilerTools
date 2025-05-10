@@ -15,6 +15,7 @@ include(linkerscript/linkerscript.pri)
 
 
 SOURCES += \
+    hashindex.cpp \
     main.cpp \
     mainwindow.cpp \
     mapfile.cpp \
@@ -22,6 +23,7 @@ SOURCES += \
     symbol.cpp
 
 HEADERS += \
+    hashindex.h \
     macro.h \
     mainwindow.h \
     mapfile.h \

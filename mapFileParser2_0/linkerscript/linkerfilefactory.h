@@ -9,7 +9,7 @@ class LinkerFileFactory {
 public:
     static ILinkerFile* create(const QString& filePath);
     static ILinkerFile* create();
-    static bool read(ILinkerFile&, const QString& filePath, bool clear = false);
+    static bool read(ILinkerFile&, const QString& filePath);
     static bool loadDescriptorFromFile(const QString& path);
     static void clearCache();
 };
