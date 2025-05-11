@@ -28,19 +28,22 @@ MainWindow::MainWindow(QWidget *parent)
         gnu::MapFileReader reader;
 
 
-        QFile file("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\output.map");
+        QFile file("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\output2.map");
         if (!file.open(QIODevice::ReadOnly)) {
             qWarning() << "do not open";
         }
 
+        qDebug() << "Start read 1111111111111----------";
         QString mapData = QString::fromUtf8(file.readAll());
         reader.read(mapfile, mapData);
         qDebug() << "END1111111111111----------";
         file.close();
 
 
+        qDebug() << "Window build----------";
         mapView = new MapFileViewer(mapfile, ui->tabWidget);
         ui->tabWidget->addTab(mapView, "MAP");
+        qDebug() << "END Window build----------";
     }
 
     {

@@ -19,7 +19,7 @@ MapFileViewer::MapFileViewer(const compiler_tools::IMapFile& mapFile, QWidget* p
     m_splitter->addWidget(m_sectionsTable);
 
     // Налаштування таблиць
-    setupSymbolsTable();
+    //setupSymbolsTable();
     setupFilesTable();
     setupSectionsTable();
 
@@ -50,7 +50,7 @@ void MapFileViewer::setupSymbolsTable()
     int row = 0;
     for (const auto& [key, proxy] : symbols) {
         const auto& symbol = proxy.value;
-        m_symbolsTable->setItem(row, 0, new QTableWidgetItem(symbol.fullName));
+        m_symbolsTable->setItem(row, 0, new QTableWidgetItem(symbol.name));
         m_symbolsTable->setItem(row, 1, new QTableWidgetItem(QString::number(symbol.vram, 16)));
         m_symbolsTable->setItem(row, 2, new QTableWidgetItem(symbol.vrom ? QString::number(*symbol.vrom, 16) : ""));
         m_symbolsTable->setItem(row, 3, new QTableWidgetItem(symbol.size ? QString::number(*symbol.size) : ""));
