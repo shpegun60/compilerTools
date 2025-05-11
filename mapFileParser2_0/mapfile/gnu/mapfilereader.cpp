@@ -112,11 +112,15 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
                 // Assign final symbol name
                 if (nameValid) {
                     symbol.name = std::move(nameCandidate);
+                    symbol.fullName = std::move(fullNameCandidate);
                 } else if (!fullNameCandidate.isEmpty()) {
                     symbol.name = std::move(fullNameCandidate);
+                    symbol.fullName = symbol.name;
                 } else {
                     symbol.name = QString("sym_%1@_%2").arg(symEntry.address).arg(unnamedSymbolCount++);
+                    symbol.fullName = std::move(nameCandidate);
                 }
+
 
                 // Assign size or default
                 symbol.size = symbol.size.value_or(0);
@@ -170,6 +174,7 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
                             }
 
                             f->id = fileIdx;
+                            f->filename = descr.extractFileName(f->filepath);
                             f->idSymbols.insert(symIdx);
                             section.idFiles.insert(fileIdx);
                         }

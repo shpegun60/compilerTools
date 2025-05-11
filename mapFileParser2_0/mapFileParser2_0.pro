@@ -15,20 +15,16 @@ include(linkerscript/linkerscript.pri)
 
 
 SOURCES += \
-    hashindex.cpp \
     main.cpp \
+    hashindex.cpp \
     mainwindow.cpp \
-    mapfile.cpp \
-    segment.cpp \
-    symbol.cpp
+    mapfileviewer.cpp
 
 HEADERS += \
     hashindex.h \
     macro.h \
     mainwindow.h \
-    mapfile.h \
-    segment.h \
-    symbol.h
+    mapfileviewer.h
 
 FORMS += \
     mainwindow.ui
@@ -37,3 +33,5 @@ FORMS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+RESOURCES +=

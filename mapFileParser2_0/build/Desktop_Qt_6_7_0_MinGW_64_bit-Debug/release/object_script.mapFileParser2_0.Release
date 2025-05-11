@@ -13,10 +13,9 @@ release/linkervariablereader.o
 release/ilinkerfile.o
 release/linkerfilefactory.o
 release/linkerreaderfactory.o
-release/hashindex.o
 release/main.o
+release/hashindex.o
 release/mainwindow.o
-release/mapfile.o
-release/segment.o
-release/symbol.o
+release/mapfileviewer.o
 release/moc_mainwindow.o
+release/moc_mapfileviewer.o

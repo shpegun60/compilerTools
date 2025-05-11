@@ -9,6 +9,8 @@
 #include <QTextEdit>
 
 #include "ilinkerfile.h"
+#include "mapfilereader.h"
+#include "mapfileviewer.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -36,6 +38,8 @@ private:
     QTextEdit* m_logText;
 
     ILinkerFile* ld;
+    IMapFile mapfile;
+    MapFileViewer* mapView;
 
     // gnu::LinkerDescriptor ld_descr;
     // gnu::LinkerFile ld;

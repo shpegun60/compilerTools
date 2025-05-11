@@ -40,6 +40,7 @@ public: /* functions */
     quint64 readLineSize(const QString &line) const;
     QString readLineName(const QString &line) const;
     QString readLinePath(const QString &line) const;
+    QString extractFileName(const QString &fullPath) const;
 };
 
 }

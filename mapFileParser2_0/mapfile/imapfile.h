@@ -41,6 +41,7 @@ public:
 
     struct Symbol {
         QString name;
+        QString fullName;
         quint64 vram;
         std::optional<quint64> vrom;
         std::optional<quint64> size;
@@ -52,6 +53,7 @@ public:
 
     struct File {
         QString filepath;
+        QString filename;
         quint64 vram;
         quint64 size;
         // iteration

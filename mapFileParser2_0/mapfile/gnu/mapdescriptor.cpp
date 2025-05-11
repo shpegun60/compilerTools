@@ -1,5 +1,7 @@
 #include "mapdescriptor.h"
 
+#include <QFileInfo>
+
 namespace compiler_tools::gnu {
 
 bool MapDescriptor::isEnd(const QString& line) const
@@ -85,13 +87,19 @@ QString MapDescriptor::readLinePath(const QString &line) const
 {
     // Pattern catches “no spaces+.o” or “.a” with optional “(member.o)”
     static const QRegularExpression re(
-        R"(([^\s]+?\.(?:o|a)(?:\([^)]+\))?))"
+        R"(([^\s]+?\.(?:o|a|obj|lib)(?:\([^)]+\))?))"
         );
     QRegularExpressionMatch m = re.match(line);
     if (m.hasMatch()) {
         return m.captured(1).trimmed();
     }
     return QString();
+}
+
+QString MapDescriptor::extractFileName(const QString &fullPath) const
+{
+    QFileInfo fileInfo(fullPath);
+    return fileInfo.fileName(); // Повертає "crtbegin.o"
 }
 
 

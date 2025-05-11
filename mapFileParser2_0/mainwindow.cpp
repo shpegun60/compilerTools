@@ -8,7 +8,7 @@
 
 
 #include "mapfilereader.h"
-#include "HashIndex.h"
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -25,7 +25,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     // map reader
     {
-        IMapFile mapfile;
         gnu::MapFileReader reader;
 
 
@@ -38,6 +37,10 @@ MainWindow::MainWindow(QWidget *parent)
         reader.read(mapfile, mapData);
         qDebug() << "END1111111111111----------";
         file.close();
+
+
+        mapView = new MapFileViewer(mapfile, ui->tabWidget);
+        ui->tabWidget->addTab(mapView, "MAP");
     }
 
     {
@@ -221,7 +224,9 @@ void MainWindow::setupUI1()
     int totalHeight = this->height(); // Використовуємо поточну висоту вікна
     verticalSplitter->setSizes({static_cast<int>(totalHeight * 0.80), static_cast<int>(totalHeight * 0.20)});
 
-    setCentralWidget(verticalSplitter);
+    ui->tabWidget->addTab(verticalSplitter, "Linker");
+    //ui->tab.s(verticalSplitter);
+    //setCentralWidget(verticalSplitter);
     resize(1280, 720);
 }
 void MainWindow::populateData() {

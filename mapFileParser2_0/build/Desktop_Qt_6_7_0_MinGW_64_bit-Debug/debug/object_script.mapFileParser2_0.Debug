@@ -13,10 +13,9 @@ debug/linkervariablereader.o
 debug/ilinkerfile.o
 debug/linkerfilefactory.o
 debug/linkerreaderfactory.o
-debug/hashindex.o
 debug/main.o
+debug/hashindex.o
 debug/mainwindow.o
-debug/mapfile.o
-debug/segment.o
-debug/symbol.o
+debug/mapfileviewer.o
 debug/moc_mainwindow.o
+debug/moc_mapfileviewer.o
