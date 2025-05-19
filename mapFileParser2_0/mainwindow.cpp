@@ -28,7 +28,7 @@ MainWindow::MainWindow(QWidget *parent)
         gnu::MapFileReader reader;
 
 
-        QFile file("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\output2.map");
+        QFile file("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\output3.map");
         if (!file.open(QIODevice::ReadOnly)) {
             qWarning() << "do not open";
         }

@@ -16,6 +16,7 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
     auto& sections = mapFile._sections;       // HashIndex<QString, Section>
     auto& symbols  = mapFile._symbols;        // HashIndex<QString, Symbol>
     auto& files    = mapFile._files;          // HashIndex<QString, File>
+    auto& fills    = mapFile._fills;          // QList<Fill>
 
     const auto& sectionDataList = symbolParser.data();
     sections.reserve(sectionDataList.size()); // avoid rehash during section inserts
@@ -46,8 +47,14 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
             // Process each symbol entry at this address
             for (const auto& symEntry : symbolList) {
                 // Skip fill entries quickly
-                if (symEntry.lines.size() == 1 && descr.isFill(symEntry.lines.first())) {
-                    continue; // skip no-data entries
+                if (symEntry.lines.size() == 1) {
+                    const quint64 fillSize = descr.readFillSize(symEntry.lines.first());
+
+                    if(fillSize) {
+                        fills.emplace_back(IMapFile::Fill{baseAddr, fillSize});
+                        section.size += fillSize;
+                        continue; // skip no-data entries
+                    }
                 }
 
                 // Prepare symbol record
@@ -68,10 +75,19 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
                     nameCandidate = fullNameCandidate;
                 }
 
-                bool   nameValid = validateName(nameCandidate);
+                bool nameValid = validateName(nameCandidate);
 
                 // Loop lines once; break early when all info gathered
                 for (const auto& line : symEntry.lines) {
+                    const quint64 fillSize = descr.readFillSize(line);
+
+                    if(fillSize) {
+                        qDebug() << line << " <<- fill";
+                        fills.emplace_back(IMapFile::Fill{baseAddr, fillSize});
+                        section.size += fillSize;
+                        continue; // skip no-data entries
+                    }
+
                     if (!nameValid) {
                         QString n = descr.readLineName(line);
                         if (validateName(n)) {
@@ -80,7 +96,7 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
                         }
                     }
 
-                    if(fullNameCandidate.isEmpty() && !nameValid) {
+                    if(fullNameCandidate.isEmpty()) {
                         //Split the string by whitespace characters (remove empty elements)
                         QStringList tokens = line.split(descr.tokenSplitter, Qt::SkipEmptyParts);
                         if (tokens.isEmpty()) {
@@ -104,9 +120,16 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
                     if (filePathCandidate.isEmpty()) {
                         filePathCandidate = descr.readLinePath(line);
                     }
-                    if (nameValid && symbol.size.has_value() && !filePathCandidate.isEmpty()) {
+                    if (nameValid && symbol.size.has_value() && !filePathCandidate.isEmpty() && !fullNameCandidate.isEmpty()) {
                         break; // all required info found, exit early
                     }
+                }
+
+                if(symbolParser.names().contains(fullNameCandidate)) {
+                    qDebug() << fullNameCandidate << " <<- skip";
+                    qDebug() << nameCandidate;
+                    qDebug() << symEntry.lines;
+                    continue;
                 }
 
                 // Assign final symbol name
@@ -146,6 +169,10 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
                         s->id = symIdx;
                         // Link symbol to section
                         section.idSymbols.insert(symIdx);
+
+                        if(s->size.has_value()) {
+                            section.size += s->size.value();
+                        }
                     }
                 }
 
@@ -171,6 +198,9 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
                             auto s = symbols.at(symIdx);
                             if(s) {
                                 s->idFile = fileIdx;
+                                if(s->size.has_value()) {
+                                    f->size += s->size.value();
+                                }
                             }
 
                             f->id = fileIdx;

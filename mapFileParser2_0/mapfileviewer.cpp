@@ -73,7 +73,8 @@ void MapFileViewer::setupSymbolsTable()
         row++;
     }
 
-    m_symbolsTable->resizeColumnsToContents();
+    //m_symbolsTable->resizeColumnsToContents();
+    m_symbolsTable->resize(100, 10);
 }
 
 void MapFileViewer::setupFilesTable()
@@ -105,7 +106,8 @@ void MapFileViewer::setupFilesTable()
         row++;
     }
 
-    m_filesTable->resizeColumnsToContents();
+    //m_filesTable->resizeColumnsToContents();
+    m_symbolsTable->resize(100, 10);
 }
 
 void MapFileViewer::setupSectionsTable()
@@ -146,5 +148,6 @@ void MapFileViewer::setupSectionsTable()
         row++;
     }
 
-    m_sectionsTable->resizeColumnsToContents();
+    //m_sectionsTable->resizeColumnsToContents();
+    m_symbolsTable->resize(100, 10);
 }

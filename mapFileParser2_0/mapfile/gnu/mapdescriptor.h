@@ -35,6 +35,8 @@ public: /* functions */
     bool isEnd(const QString &line) const;
     bool isIgnore(const QString &line) const;
     bool isFill(const QString &line) const;
+    quint64 readFillSize(const QString& line) const;
+    bool isAssignmentLine(const QString& line) const;
 
     std::pair<QString, quint64> readLineAddress(const QString &s) const;
     quint64 readLineSize(const QString &line) const;

@@ -20,6 +20,7 @@ void MapRaw::readBody(const MapDescriptor& descr, const QString& map)
 
     int unknownCnt = 0;
     Section seg {};
+    seg.lines.reserve(4);
 
     // ------------------------------------------------------
     for (int i = 0; i < lines.size(); ++i) {
@@ -29,7 +30,7 @@ void MapRaw::readBody(const MapDescriptor& descr, const QString& map)
             continue;
         } else if(descr.isEnd(line)) {
             break;
-        } else if(descr.isIgnore(line)) {
+        } else if(descr.isIgnore(line) || descr.isAssignmentLine(line)) {
             _ignored.append(std::move(line));
             continue;
         }
@@ -48,6 +49,7 @@ void MapRaw::readBody(const MapDescriptor& descr, const QString& map)
                 }
                 seg.name = segmentMatch.captured(1).trimmed();
                 seg.lines.clear();
+                seg.lines.reserve(4);
             } else {
                 seg.lines.emplace_back(std::move(line));
             }

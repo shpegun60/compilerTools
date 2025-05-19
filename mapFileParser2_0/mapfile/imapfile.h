@@ -34,10 +34,12 @@ public:
     struct Symbol;
     struct File;
     struct Section;
+    struct Fill;
 
     using Symbols = HashIndex<QString, Symbol>;
     using Files = HashIndex<QString, File>;
     using Sections = HashIndex<QString, Section>;
+    using Fills = QList<Fill>;
 
     struct Symbol {
         QString name;
@@ -71,6 +73,11 @@ public:
         QSet<Symbols::Index> idSymbols;
     };
 
+    struct Fill {
+        quint64 addr;
+        quint64 size;
+    };
+
 public: /* functions */
     const Symbols& symbols() const { return _symbols; }
     const Files& files() const { return _files; }
@@ -86,9 +93,10 @@ private: /* other functions */
     QTextStream& log() { return stream; }
 
 private:
-    Symbols _symbols {};
-    Files _files {};
-    Sections _sections{};
+    Symbols     _symbols {};
+    Files       _files {};
+    Sections    _sections{};
+    Fills       _fills {};
 
     MapType type = MapType::Empty;
     // logging ---------------------------------------

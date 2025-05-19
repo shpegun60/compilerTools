@@ -32,6 +32,24 @@ bool MapDescriptor::isFill(const QString& line) const
     return false;
 }
 
+quint64 MapDescriptor::readFillSize(const QString& line) const
+{
+    if (line.contains(fillIdentifier)) {
+        return readLineSize(line);
+    }
+    return 0;
+}
+
+bool MapDescriptor::isAssignmentLine(const QString &line) const
+{
+    static const QRegularExpression re(R"(\S+\s*=\s*\S+)");
+
+    if (line.contains("operator=")) {
+        return false;
+    }
+    return re.match(line).hasMatch();
+}
+
 std::pair<QString, quint64> MapDescriptor::readLineAddress(const QString& line) const
 {
     const QRegularExpressionMatch match = hexRegex.match(line);

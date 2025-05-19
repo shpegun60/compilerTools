@@ -17,6 +17,13 @@ bool MapSymbol::read(const MapDescriptor& descr, const MapRaw& raw)
     for(auto& raw : raw.data()) {
         Section section{};
         section.name = raw.name;
+        section.addresses.reserve(4);
+
+
+        QString nameCopy = raw.name;
+        nameCopy.remove('*');
+        _names.insert(std::move(nameCopy));
+        _names.insert(raw.name);
 
         for(auto& line : raw.lines) {
             if (line.isEmpty()) {
@@ -83,17 +90,23 @@ bool MapSymbol::read(const MapDescriptor& descr, const MapRaw& raw)
 
                         currentSymbol.name = std::move(symbolName);
                         currentSymbol.address = std::move(addr.first);
+                        currentSymbol.lines.clear();
+                        currentSymbol.lines.reserve(3);
                         currentSymbol.lines.emplace_back(line);
 
                         symbolName.clear();
                         key = addr.second;
+                        section.addresses[key].reserve(2);
                     }
                 } else {
                     currentSymbol.name = std::move(symbolName);
                     currentSymbol.address = std::move(addr.first);
+                    currentSymbol.lines.clear();
+                    currentSymbol.lines.reserve(3);
                     currentSymbol.lines.emplace_back(line);
 
                     key = addr.second;
+                    section.addresses[key].reserve(2);
                     symbolName.clear();
                 }
             }
