@@ -17,7 +17,7 @@ bool MapDescriptor::isEnd(const QString& line) const
 bool MapDescriptor::isIgnore(const QString& line) const
 {
     for (const QString &name : memMapIgnoreMarkers) {
-        if (line.startsWith(name)) {
+        if (line.contains(name)) {
             return true;
         }
     }
@@ -48,6 +48,23 @@ bool MapDescriptor::isAssignmentLine(const QString &line) const
         return false;
     }
     return re.match(line).hasMatch();
+}
+
+std::pair<bool, quint64> MapDescriptor::readLoadAddr(const QString &line) const
+{
+    static const QRegularExpression loadAddrRe(
+        R"(load address\s+(0x[0-9A-Fa-f]+))",
+        QRegularExpression::CaseInsensitiveOption
+        );
+
+    QRegularExpressionMatch m = loadAddrRe.match(line);
+    if (m.hasMatch()) {
+        bool ok = false;
+        quint64 addr = m.captured(1).toULongLong(&ok, 16);
+        return { ok, addr };
+    }
+
+    return { false, 0 };
 }
 
 std::pair<QString, quint64> MapDescriptor::readLineAddress(const QString& line) const

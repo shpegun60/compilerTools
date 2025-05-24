@@ -43,7 +43,8 @@ public:
 
     struct Symbol {
         QString name;
-        QString fullName;
+        QString lable;
+        QString filepath;
         quint64 vram;
         std::optional<quint64> vrom;
         std::optional<quint64> size;
@@ -66,6 +67,7 @@ public:
     struct Section {
         QString name;
         quint64 vram;
+        std::optional<quint64> vrom;
         quint64 size;
         // iteration
         Sections::Index id;

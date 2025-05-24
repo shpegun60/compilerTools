@@ -17,10 +17,12 @@ public:
     };
 
     using Data = QList<Section>;
+    using Names = QSet<QString>;
 
 public: /* functions */
     bool read(const MapDescriptor&, const QString&);
     inline const Data& data() const { return _sections; }
+    inline const Names& names() const { return _names; }
     inline const QStringList& ignored() const { return _ignored; }
     inline void clear() { _sections.clear(); _ignored.clear(); }
 private:
@@ -28,6 +30,7 @@ private:
 
 private: /* variables */
     Data _sections {};
+    Names _names{};
     QStringList _ignored {};
 };
 

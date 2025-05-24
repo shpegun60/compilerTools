@@ -2,32 +2,22 @@
 
 namespace compiler_tools::gnu {
 
-bool MapSymbol::read(const MapDescriptor& descr, const MapRaw& raw)
+bool MapSymbol::read(const MapDescriptor& descr, const MapRaw& mapraw)
 {
-    if(raw.data().size() == 0) {
+    if(mapraw.data().size() == 0) {
         return false;
     }
-    _sections.reserve(raw.data().size());
-    _names.reserve(raw.data().size());
+    _sections.reserve(mapraw.data().size());
 
     Symbol currentSymbol {};
     QString symbolName {};
     quint64 key = 0;
 
     // ------------------------------------------------------
-    for(auto& raw : raw.data()) {
+    for(auto& raw : mapraw.data()) {
         Section section{};
         section.name = raw.name;
         section.addresses.reserve(4);
-
-        // push names to QSet
-        {
-            QString nameCopy = raw.name;
-            nameCopy.remove('*');
-            _names.insert(std::move(nameCopy));
-            _names.insert(raw.name);
-        }
-
 
         for(auto& line : raw.lines) {
             if (line.isEmpty()) {
@@ -48,10 +38,11 @@ bool MapSymbol::read(const MapDescriptor& descr, const MapRaw& raw)
                 //     0x0800252c                LTDC_ER_IRQHandler
                 // name is --> .text.Default_Handler
                 if(tokens.size() == 1) {
-                    symbolName = tokens[0].trimmed();
+                    symbolName = tokens.first().trimmed();
                     continue;
                 }
             }
+
             //////////////////////////////////////////////////////
 
 
@@ -94,6 +85,7 @@ bool MapSymbol::read(const MapDescriptor& descr, const MapRaw& raw)
 
                         currentSymbol.name = std::move(symbolName);
                         currentSymbol.address = std::move(addr.first);
+                        currentSymbol.address_d = addr.second;
                         currentSymbol.lines.clear();
                         currentSymbol.lines.reserve(3);
                         currentSymbol.lines.emplace_back(line);
@@ -105,6 +97,7 @@ bool MapSymbol::read(const MapDescriptor& descr, const MapRaw& raw)
                 } else {
                     currentSymbol.name = std::move(symbolName);
                     currentSymbol.address = std::move(addr.first);
+                    currentSymbol.address_d = addr.second;
                     currentSymbol.lines.clear();
                     currentSymbol.lines.reserve(3);
                     currentSymbol.lines.emplace_back(line);
@@ -122,6 +115,7 @@ bool MapSymbol::read(const MapDescriptor& descr, const MapRaw& raw)
 
             currentSymbol.name.clear();
             currentSymbol.address.clear();
+            currentSymbol.address_d = 0;
             currentSymbol.lines.clear();
 
             symbolName.clear();
