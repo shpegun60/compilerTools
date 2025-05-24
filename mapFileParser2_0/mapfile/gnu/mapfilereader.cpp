@@ -53,14 +53,14 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
                     auto some = processSymbol(rawParser.names(), symEntry, nextpos);
 
                     // is fill -------------------------------------
-                    if(some.type == SymbolType::isFill) {
+                    if(some.type == CursorType::isFill) {
                         if(some.size.has_value()) {
                             section.size += some.size.value();
                             fills.emplace_back(IMapFile::Fill{some.vram, some.size.value()});
                         }
                     }
                     // is symbol -----------------------------------
-                    else if(some.type == SymbolType::isSymbol) {
+                    else if(some.type == CursorType::isSymbol) {
 
                         IMapFile::Symbol symbol{};
                         symbol.name      = some.name;
@@ -136,11 +136,18 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
                             }
                         }
                     }
-                    else if(some.type == SymbolType::isSectionInfo) {
+                    else if(some.type == CursorType::isSectionInfo) {
+                        qDebug() << "name: " << some.name;
+                        qDebug() << "lable: " << some.lable;
+                        qDebug() << "size: " << some.size;
+                        qDebug() << "vram: " << some.vram;
+                        qDebug() << "vrom: " << some.vrom;
+                        qDebug() << '\n';
 
+                        secInfo.emplace_back(std::move(some));
                     }
                     // out of range
-                    else if(some.type == SymbolType::isOutOfRange) {
+                    else if(some.type == CursorType::isOutOfRange) {
                         break;
                     }
                     nextpos = some.nextPos;
@@ -195,12 +202,12 @@ bool MapFileReader::validateName(const QString & name) const
     return false;
 }
 
-MapFileReader::Something MapFileReader::processSymbol(const QSet<QString>& names,
+MapFileReader::Cursor MapFileReader::processSymbol(const QSet<QString>& names,
                                                      const MapSymbol::Symbol& data, const qsizetype pos)
 {
     if(pos >= data.lines.size()) {
-        Something some{};
-        some.type         = SymbolType::isOutOfRange;
+        Cursor some{};
+        some.type         = CursorType::isOutOfRange;
         some.nextPos = data.lines.size();
         return some;
     } else if(pos != 0) {
@@ -213,11 +220,11 @@ MapFileReader::Something MapFileReader::processSymbol(const QSet<QString>& names
     bool isStrange              = false;
     qsizetype nextPosition      = 0;
     // Prepare symbol record
-    Something some{};
+    Cursor some{};
     some.vram           = data.address_d;
     some.vrom           = std::nullopt;
     some.size           = std::nullopt;
-    some.type           = SymbolType::isUndef;
+    some.type           = CursorType::isUndef;
     some.nextPos = 0;
 
     // Skip fill entries quickly
@@ -226,7 +233,7 @@ MapFileReader::Something MapFileReader::processSymbol(const QSet<QString>& names
 
         if(fillSize) {
             some.size         = fillSize;
-            some.type         = SymbolType::isFill;
+            some.type         = CursorType::isFill;
             some.nextPos = data.lines.size();
             return some; // skip no-data entries
         }
@@ -257,7 +264,7 @@ MapFileReader::Something MapFileReader::processSymbol(const QSet<QString>& names
             if(fillSize) {
                 if(line_i == pos) {
                     some.size         = fillSize;
-                    some.type         = SymbolType::isFill;
+                    some.type         = CursorType::isFill;
                     some.nextPos = line_i + 1;
                     return some;
                 } else {
@@ -286,7 +293,7 @@ MapFileReader::Something MapFileReader::processSymbol(const QSet<QString>& names
             if(validateName(tokens.first())) {
                 ++statements;
                 if(fullNameCandidate.isEmpty()) {
-                    fullNameCandidate = std::move(tokens.first());
+                    fullNameCandidate = tokens.first().trimmed();
                 }
                 if(statements > 1) {
                     break;
@@ -337,17 +344,6 @@ MapFileReader::Something MapFileReader::processSymbol(const QSet<QString>& names
         }
     }
 
-    if(isStrange) {
-        if(filePathCandidate.isEmpty()) {
-            qDebug() << "Ignore this";
-            qDebug() << data.lines.mid(nextPosition - 1);
-            qDebug() << "load: " << some.vrom;
-            qDebug() << '\n';
-            some.nextPos = nextPosition;
-            return some; // skip no-data entries
-        }
-    }
-
     // Assign final symbol name
     if (nameValid) {
         some.name = std::move(nameCandidate);
@@ -360,10 +356,20 @@ MapFileReader::Something MapFileReader::processSymbol(const QSet<QString>& names
         some.lable = std::move(nameCandidate);
     }
 
+    if(isStrange) {
+        if(filePathCandidate.isEmpty()) {
+            qDebug() << "Ignore this";
+            qDebug() << data.lines.mid(nextPosition - 1);
+            some.nextPos = nextPosition;
+            some.type = CursorType::isSectionInfo;
+            return some; // skip no-data entries
+        }
+    }
+
     // Assign size or default
     some.filepath = filePathCandidate;
     some.size = some.size.value_or(0);
-    some.type = SymbolType::isSymbol;
+    some.type = CursorType::isSymbol;
     some.nextPos = nextPosition;
     return some;
 }
