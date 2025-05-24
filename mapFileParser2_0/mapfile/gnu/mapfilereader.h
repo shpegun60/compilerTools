@@ -41,7 +41,6 @@ private:
 private: /* fields */
     // descriptor of file -------------------
     MapDescriptor descr;
-    QList<Cursor> secInfo;
 };
 
 }

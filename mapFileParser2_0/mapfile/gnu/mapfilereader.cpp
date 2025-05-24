@@ -144,7 +144,33 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
                         qDebug() << "vrom: " << some.vrom;
                         qDebug() << '\n';
 
-                        secInfo.emplace_back(std::move(some));
+                        // Only for test
+                        {
+                            IMapFile::Section testSec{};
+                            testSec.name   = some.name + "@_post";
+                            testSec.vram   = some.vram;
+                            testSec.vrom   = some.vrom;
+                            testSec.size   = some.size.value_or(0);
+                            testSec.id     = IMapFile::Sections::INVALID;
+
+                            int atemps = 0;
+                            IMapFile::Sections::Index secIdx = sections.emplace(testSec.name, std::move(testSec));
+                            while(secIdx == IMapFile::Sections::INVALID) {
+                                testSec.name += QString("@_%1").arg(unnamedSymbolCount++);
+                                secIdx = sections.emplace(testSec.name, std::move(testSec));
+
+                                ++atemps;
+                                if(atemps > 3) {
+                                    break;
+                                }
+                            }
+
+                            // Update section reference in container
+                            auto sec = sections.at(secIdx);
+                            if(sec) {
+                                sec->id = secIdx;
+                            }
+                        }
                     }
                     // out of range
                     else if(some.type == CursorType::isOutOfRange) {
