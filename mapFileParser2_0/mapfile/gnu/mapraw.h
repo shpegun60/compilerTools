@@ -2,6 +2,7 @@
 #define MAPRAW_H
 
 #include "mapdescriptor.h"
+#include "imapfile.h"
 
 namespace compiler_tools::gnu {
 
@@ -16,13 +17,17 @@ public:
         QStringList lines;
     };
 
+    struct Fill {
+        quint64 addr;
+        quint64 size;
+    };
+
     using Data = QList<Section>;
-    //using Names = QSet<QString>;
 
 public: /* functions */
     bool read(const MapDescriptor&, const QString&);
     inline const Data& data() const { return _sections; }
-    //inline const Names& names() const { return _names; }
+    inline auto& fills() { return _fills; }
     inline const QStringList& ignored() const { return _ignored; }
     inline void clear() { _sections.clear(); _ignored.clear(); }
 private:
@@ -30,7 +35,7 @@ private:
 
 private: /* variables */
     Data _sections {};
-    //Names _names{};
+    IMapFile::Fills _fills{};
     QStringList _ignored {};
 };
 

@@ -21,6 +21,7 @@ void MapRaw::readBody(const MapDescriptor& descr, const QString& map)
     int unknownCnt = 0;
     Section seg {};
     seg.lines.reserve(4);
+    _fills.reserve(4);
 
     // ------------------------------------------------------
     for (qsizetype i = 0; i < lines.size(); ++i) {
@@ -30,10 +31,32 @@ void MapRaw::readBody(const MapDescriptor& descr, const QString& map)
             continue;
         } else if(descr.isEnd(line)) {
             break;
-        } else if(descr.isIgnore(line) || descr.isAssignmentLine(line)) {
+        } else if(descr.isIgnore(line)
+                   || descr.isAssignmentLine(line) || descr.isProvideLine(line) || descr.isAlignLine(line)) {
             _ignored.append(std::move(line));
             continue;
         }
+
+        {
+            const auto fsize = descr.readFillSize(line);
+            if(fsize.first) {
+
+                if(fsize.second == 0) {
+                    _ignored.append(std::move(line));
+                    continue;
+                }
+
+                const auto faddr = descr.readLineAddress(line);
+                if (faddr.first == "-1") {
+                    _ignored.append(std::move(line));
+                    continue;
+                }
+
+                _fills.emplace_back(IMapFile::Fill{faddr.second, fsize.second});
+                continue;
+            }
+        }
+
 
         // split all lines
         {

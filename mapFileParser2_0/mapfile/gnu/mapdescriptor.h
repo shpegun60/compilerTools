@@ -26,7 +26,7 @@ public: /* fields */
     /* ----- unknown section name --- */
     static const inline QString unknown  = "@UNKNOWN";
     /* markers */
-    QStringList memMapIgnoreMarkers = {"LOAD ", "START GROUP", "END GROUP", "linker stubs"};
+    QStringList memMapIgnoreMarkers = {"LOAD ", "START GROUP", "END GROUP", "linker stubs", "(size before relaxing)", "FILL mask"};
     QStringList memMapEndMarkers = {"/DISCARD/", "OUTPUT", "LOAD linker stubs"};
     /* ----- segment names ---------- */
     QStringList sectionNames{};
@@ -37,8 +37,10 @@ public: /* functions */
     bool isEnd(const QString &line) const;
     bool isIgnore(const QString &line) const;
     bool isFill(const QString &line) const;
-    quint64 readFillSize(const QString& line) const;
+    std::pair<bool, quint64> readFillSize(const QString& line) const;
     bool isAssignmentLine(const QString& line) const;
+    bool isProvideLine(const QString &line) const;
+    bool isAlignLine(const QString &line) const;
     std::pair<bool, quint64> readLoadAddr(const QString& line) const;
 
     std::pair<QString, quint64> readLineAddress(const QString &s) const;

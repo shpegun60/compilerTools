@@ -28,7 +28,14 @@ MainWindow::MainWindow(QWidget *parent)
         gnu::MapFileReader reader;
 
 
-        QFile file("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\output2.map");
+        QFile file("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\output.map");
+        //QFile file("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\test\\cleo.map");
+        //QFile file("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\test\\risc5.map");
+        //QFile file("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\test\\hello.map");
+        //QFile file("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\test\\output.map");
+        //QFile file("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\test\\output1.map");
+        //QFile file("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\test\\maps\\drmario64.us.map");
+        // QFile file("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\test\\maps\\w0_000.map");
         if (!file.open(QIODevice::ReadOnly)) {
             qWarning() << "do not open";
         }

@@ -19,7 +19,7 @@ MapFileViewer::MapFileViewer(const compiler_tools::IMapFile& mapFile, QWidget* p
     m_splitter->addWidget(m_sectionsTable);
 
     // Налаштування таблиць
-    //setupSymbolsTable();
+    setupSymbolsTable();
     setupFilesTable();
     setupSectionsTable();
 

@@ -12,14 +12,13 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
     rawParser.read(descr, file);
     symbolParser.read(descr, rawParser);
 
-    // Aliases to containers for faster access
-    auto& fills    = mapFile._fills;          // QList<Fill>
+    // // Aliases to containers for faster access
+    auto& fills = mapFile._fills;
 
     auto& sections = mapFile._sections;       // HashIndex<QString, Section>
     auto& symbols  = mapFile._symbols;        // HashIndex<QString, Symbol>
     auto& files    = mapFile._files;          // HashIndex<QString, File>
     auto& infos    = mapFile._infos;
-
 
     const auto& sectionDataList = symbolParser.data();
     sections.reserve(sectionDataList.size()); // avoid rehash during section inserts
@@ -27,6 +26,7 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
     // Optionally reserve expected symbols/files to reduce rehash
     symbols.reserve(symbolParser.estimateSymbolCount());
     files.reserve(sectionDataList.size() * 2); // heuristic
+    fills = std::move(rawParser.fills());
 
     int unnamedSymbolCount = 0;
 
@@ -58,15 +58,7 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
                 do {
                     auto some = processSymbol(symbolParser.names(), symEntry, nextpos);
 
-                    // is fill -------------------------------------
-                    if(some.type == CursorType::isFill) {
-                        if(some.size.has_value()) {
-                            section.size += some.size.value();
-                            fills.emplace_back(IMapFile::Fill{some.vram, some.size.value()});
-                        }
-                    }
-                    // is symbol -----------------------------------
-                    else if(some.type == CursorType::isSymbol) {
+                    if(some.type == CursorType::isSymbol) {
                         IMapFile::Symbol symbol{};
                         symbol.name      = some.name;
                         symbol.lable     = some.lable;
@@ -260,8 +252,8 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
             }
         }
     }
+    processFill(mapFile);
     processSectionInfos(mapFile);
-
     return true;
 }
 
@@ -274,10 +266,39 @@ bool MapFileReader::loadDescriptorFromFile(const QString&)
 bool MapFileReader::validateName(const QString & name) const
 {
     if(!name.isEmpty() && name.size() != 1 &&
-        !name.startsWith("./") && !name.startsWith("0x", Qt::CaseInsensitive) && !name.contains('=')) {
+        !name.startsWith("./") && !name.startsWith("0x", Qt::CaseInsensitive)) {
         return true;
     }
     return false;
+}
+
+void MapFileReader::processFill(IMapFile &mapFile)
+{
+    auto& sections = mapFile._sections;       // HashIndex<QString, Section>
+    const auto& fills = mapFile._fills;
+
+    for (const auto& f : fills) {
+        for(const auto& inf : std::as_const(mapFile._infos)) {
+            const auto& i = inf.value;
+
+            const quint64 baddr = i.vram;
+            const quint64 eaddr = baddr + i.size;
+
+            if (f.addr >= baddr && (f.addr + f.size) <= eaddr) {
+
+                auto it = sections.find(i.name);
+                if(it != sections.end()) {
+                    auto& s = (*it).value;
+                    s.size += f.size;
+                }
+
+                qDebug() << "filll!!!!";
+                qDebug() << "addr: " << f.addr << "size" << f.size;
+                qDebug() << "in: " << i.name << "start: " << i.vram << "size: " << i.size;
+                qDebug() << '\n';
+            }
+        }
+    }
 }
 
 void MapFileReader::processSectionInfos(IMapFile& mapFile)
@@ -293,7 +314,9 @@ void MapFileReader::processSectionInfos(IMapFile& mapFile)
             s.vram = i.vram;
             s.vrom = i.vrom;
             s.sizedev = i.size - s.size;
-        } else {
+        }
+        //else
+        {
             // Only for test
             IMapFile::Section testSec{};
             testSec.name   = i.name + "@_post";
@@ -320,11 +343,7 @@ void MapFileReader::processSectionInfos(IMapFile& mapFile)
                 sec->id = secIdx;
             }
         }
-
-
-
     }
-
 }
 
 MapFileReader::Cursor MapFileReader::processSymbol(const QSet<QString>& names,
@@ -353,26 +372,20 @@ MapFileReader::Cursor MapFileReader::processSymbol(const QSet<QString>& names,
     some.nextPos = 0;
 
     // Skip fill entries quickly
-    if (data.lines.size() == 1) {
-        const quint64 fillSize = descr.readFillSize(data.lines.first());
-
-        if(fillSize) {
-            some.size         = fillSize;
-            some.type         = CursorType::isFill;
-            some.nextPos = data.lines.size();
-            return some; // skip no-data entries
-        }
-    } else if(names.contains(data.name)) {
+    if(names.contains(data.name)) {
         isStrange = true;
     }
 
     // Determine name, size, path in one pass
-    QString fullNameCandidate = data.name;
+    QString fullNameCandidate;
     QString nameCandidate{};
     QString filePathCandidate{};
 
-    if(data.lines.size() > 3 && pos == 0) {
-        nameCandidate = fullNameCandidate;
+    if(pos == 0) {
+        fullNameCandidate = data.name;
+        if(data.lines.size() > 3) {
+            nameCandidate = fullNameCandidate;
+        }
     }
 
     bool nameValid = validateName(nameCandidate);
@@ -381,22 +394,6 @@ MapFileReader::Cursor MapFileReader::processSymbol(const QSet<QString>& names,
     // Loop lines once; break early when all info gathered
     for (qsizetype line_i = pos; line_i < data.lines.size(); ++line_i) {
         const auto& line = data.lines[line_i];
-
-        // process fill ---
-        {
-            const quint64 fillSize = descr.readFillSize(line);
-
-            if(fillSize) {
-                if(line_i == pos) {
-                    some.size         = fillSize;
-                    some.type         = CursorType::isFill;
-                    some.nextPos = line_i + 1;
-                    return some;
-                } else {
-                    break;
-                }
-            }
-        }
 
         // process full name & stranges elements
         {
@@ -482,6 +479,12 @@ MapFileReader::Cursor MapFileReader::processSymbol(const QSet<QString>& names,
     }
 
     if(isStrange) {
+
+        qDebug() << "Strange ------ " << some.name << " " << some.size <<" " <<  some.vram;
+        qDebug() << data.lines;
+        qDebug() << '\n';
+
+
         if(filePathCandidate.isEmpty()) {
             qDebug() << "Ignore this";
             qDebug() << data.lines.mid(nextPosition - 1);

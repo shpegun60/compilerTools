@@ -32,12 +32,12 @@ bool MapDescriptor::isFill(const QString& line) const
     return false;
 }
 
-quint64 MapDescriptor::readFillSize(const QString& line) const
+std::pair<bool, quint64> MapDescriptor::readFillSize(const QString& line) const
 {
     if (line.contains(fillIdentifier)) {
-        return readLineSize(line);
+        return {true, readLineSize(line)};
     }
-    return 0;
+    return {false, 0};
 }
 
 bool MapDescriptor::isAssignmentLine(const QString &line) const
@@ -49,6 +49,20 @@ bool MapDescriptor::isAssignmentLine(const QString &line) const
     }
     return re.match(line).hasMatch();
 }
+
+bool MapDescriptor::isProvideLine(const QString &line) const
+{
+    static const QRegularExpression re(R"(PROVIDE\s*\(.*?\))");
+    return re.match(line).hasMatch();
+}
+
+bool MapDescriptor::isAlignLine(const QString &line) const
+{
+    static const QRegularExpression re(R"(ALIGN\s*\(.*?\))");
+    return re.match(line).hasMatch();
+}
+
+
 
 std::pair<bool, quint64> MapDescriptor::readLoadAddr(const QString &line) const
 {

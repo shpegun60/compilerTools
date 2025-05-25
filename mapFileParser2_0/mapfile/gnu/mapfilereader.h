@@ -16,7 +16,6 @@ public:
     {
         isUndef,
         isSymbol,
-        isFill,
         isSectionInfo,
         isOutOfRange
     };
@@ -38,6 +37,7 @@ public: /* IMapFileReader interface */
 private:
     bool validateName(const QString&) const;
     Cursor processSymbol(const QSet<QString>& names, const MapSymbol::Symbol& data, const qsizetype pos);
+    void processFill(IMapFile& mapFile);
     void processSectionInfos(IMapFile& mapFile);
 private: /* fields */
     // descriptor of file -------------------
