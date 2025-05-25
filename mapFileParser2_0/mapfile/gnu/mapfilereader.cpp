@@ -12,9 +12,7 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
     rawParser.read(descr, file);
     symbolParser.read(descr, rawParser);
 
-    // // Aliases to containers for faster access
-    auto& fills = mapFile._fills;
-
+    //Aliases to containers for faster access
     auto& sections = mapFile._sections;       // HashIndex<QString, Section>
     auto& symbols  = mapFile._symbols;        // HashIndex<QString, Symbol>
     auto& files    = mapFile._files;          // HashIndex<QString, File>
@@ -26,7 +24,7 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
     // Optionally reserve expected symbols/files to reduce rehash
     symbols.reserve(symbolParser.estimateSymbolCount());
     files.reserve(sectionDataList.size() * 2); // heuristic
-    fills = std::move(rawParser.fills());
+    infos.reserve(sectionDataList.size());
 
     int unnamedSymbolCount = 0;
 
@@ -184,6 +182,8 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
             }
         }
 
+        processFill(mapFile, section, sectionData.fills);
+
         // Finally insert section
         {
             IMapFile::Sections::Index secIdx = sections.indexOf(section.name);
@@ -252,7 +252,6 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
             }
         }
     }
-    processFill(mapFile);
     processSectionInfos(mapFile);
     return true;
 }
@@ -272,33 +271,24 @@ bool MapFileReader::validateName(const QString & name) const
     return false;
 }
 
-void MapFileReader::processFill(IMapFile &mapFile)
+void MapFileReader::processFill(IMapFile &m, IMapFile::Section& s, const IMapFile::Fills& fills)
 {
-    auto& sections = mapFile._sections;       // HashIndex<QString, Section>
-    const auto& fills = mapFile._fills;
-
     for (const auto& f : fills) {
-        for(const auto& inf : std::as_const(mapFile._infos)) {
-            const auto& i = inf.value;
+        const quint64 baddr = f.addr;
+        const quint64 eaddr = baddr + f.size;
 
-            const quint64 baddr = i.vram;
-            const quint64 eaddr = baddr + i.size;
-
-            if (f.addr >= baddr && (f.addr + f.size) <= eaddr) {
-
-                auto it = sections.find(i.name);
-                if(it != sections.end()) {
-                    auto& s = (*it).value;
-                    s.size += f.size;
-                }
-
-                qDebug() << "filll!!!!";
-                qDebug() << "addr: " << f.addr << "size" << f.size;
-                qDebug() << "in: " << i.name << "start: " << i.vram << "size: " << i.size;
-                qDebug() << '\n';
-            }
+        if(baddr < s.baddr) {
+            s.baddr = baddr;
         }
+
+        if(eaddr > s.eaddr) {
+            s.eaddr = eaddr;
+        }
+
+        s.size += f.size;
     }
+
+    m._fills.append(fills);
 }
 
 void MapFileReader::processSectionInfos(IMapFile& mapFile)

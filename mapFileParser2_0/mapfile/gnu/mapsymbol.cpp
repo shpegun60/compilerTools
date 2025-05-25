@@ -19,6 +19,7 @@ bool MapSymbol::read(const MapDescriptor& descr, const MapRaw& mapraw)
         Section section{};
         section.name = raw.name;
         section.addresses.reserve(4);
+        section.fills.reserve(4);
 
         // push names to QSet
         {
@@ -48,6 +49,22 @@ bool MapSymbol::read(const MapDescriptor& descr, const MapRaw& mapraw)
 
             if (tokens.isEmpty()) {
                 continue;
+            }
+
+            // proceed fills -----------------------------
+            {
+                const auto fsize = descr.readFillSize(line);
+                if(fsize.first) {
+
+                    const auto faddr = descr.readLineAddress(line);
+                    if (faddr.first == "-1") {
+                        _ignored.append(std::move(line));
+                        continue;
+                    }
+
+                    section.fills.emplace_back(IMapFile::Fill{faddr.second, fsize.second});
+                    continue;
+                }
             }
 
             ////////////////Read symbol name////////////////////////////////////////

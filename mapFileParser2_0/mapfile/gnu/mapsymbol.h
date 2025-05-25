@@ -2,6 +2,7 @@
 #define MAPSYMBOL_H
 
 #include "mapraw.h"
+#include "imapfile.h"
 
 namespace compiler_tools::gnu {
 
@@ -22,6 +23,7 @@ public:
     struct Section {
         QString name;
         QHash<quint64, QList<Symbol>> addresses;
+        IMapFile::Fills fills{};
     };
 
     using Data = QList<Section>;
@@ -33,7 +35,7 @@ public: /* functions */
     inline const Names& names() const { return _names; }
     inline const QStringList& ignored() const { return _ignored; }
     inline void clear() { _sections.clear(); _ignored.clear(); }
-    int estimateSymbolCount() { return _estimatedSymbols; };
+    int estimateSymbolCount() { return _estimatedSymbols; }
 
 private:
     Data _sections{};
