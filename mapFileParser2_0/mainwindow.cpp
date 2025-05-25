@@ -28,7 +28,7 @@ MainWindow::MainWindow(QWidget *parent)
         gnu::MapFileReader reader;
 
 
-        QFile file("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\output3.map");
+        QFile file("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\output2.map");
         if (!file.open(QIODevice::ReadOnly)) {
             qWarning() << "do not open";
         }
@@ -70,20 +70,20 @@ MainWindow::MainWindow(QWidget *parent)
         qDebug() << "All key-value pairs:";
         for (auto it = idx.begin(); it != idx.end(); ++it) {
             int index = it.getIndex(); // direct access to index
-            qDebug() << "  [" << index << "]" << idx.keyAt(index) << ":" << *it;
+            qDebug() << "  [" << index << "]" << idx.keyAt(index) << ":" << (*it).value;
         }
 
         qDebug() << "range based";
-        for (auto [key, value] : idx) {
-            qDebug() << key << ":" << value;
+        for (auto i : idx) {
+            qDebug() << i.key << ":" << i.value;
         }
 
         // Remove an element
         idx.remove("banana");
         qDebug() << "After removing 'banana': size=" << idx.size();
         qDebug() << "range based";
-        for (auto [key, value] : idx) {
-            qDebug() << key << ":" << value;
+        for (auto i : idx) {
+            qDebug() << i.key << ":" << i.value;
         }
 
 
@@ -94,7 +94,7 @@ MainWindow::MainWindow(QWidget *parent)
         // Validate holes are gone
         for (auto it = idx.begin(); it != idx.end(); ++it) {
             int index = it.getIndex();
-            qDebug() << "  [" << index << "]" << idx.keyAt(index) << ":" << *it;
+            qDebug() << "  [" << index << "]" << idx.keyAt(index) << ":" << (*it).value;
         }
         // 1. Створення контейнера з ключами QString та значеннями int
         // HashIndex<QString, int> container;

@@ -31,15 +31,23 @@ public:
         Clang
     };
 
+    // fills -------------------------
+    struct Fill {
+        quint64 addr;
+        quint64 size;
+    };
+
+    using Fills     = QList<Fill>;
+
+
+    // Main symbolls -------------------------
     struct Symbol;
     struct File;
     struct Section;
-    struct Fill;
 
-    using Symbols = HashIndex<QString, Symbol>;
-    using Files = HashIndex<QString, File>;
-    using Sections = HashIndex<QString, Section>;
-    using Fills = QList<Fill>;
+    using Symbols   = HashIndex<QString, Symbol>;
+    using Files     = HashIndex<QString, File>;
+    using Sections  = HashIndex<QString, Section>;
 
     struct Symbol {
         QString name;
@@ -69,16 +77,26 @@ public:
         quint64 vram;
         std::optional<quint64> vrom;
         quint64 size;
+        int sizedev;
+        // other for debug
+        quint64 baddr;
+        quint64 eaddr;
         // iteration
         Sections::Index id;
         QSet<Files::Index> idFiles;
         QSet<Symbols::Index> idSymbols;
     };
 
-    struct Fill {
-        quint64 addr;
-        quint64 size;
+    /// Summary information for a section
+    struct SectionSummary {
+        QString name;                   // section name, e.g. ".text"
+        quint64 vram;                   // starting address in RAM
+        std::optional<quint64> vrom;    // starting address in ROM (if any)
+        quint64 size;                   // section size in bytes
     };
+
+    // Container for all sections with their summary information
+    using SectionSummaries = HashIndex<QString, SectionSummary>;
 
 public: /* functions */
     const Symbols& symbols() const { return _symbols; }
@@ -95,10 +113,12 @@ private: /* other functions */
     QTextStream& log() { return stream; }
 
 private:
+    Fills       _fills {};
+
     Symbols     _symbols {};
     Files       _files {};
     Sections    _sections{};
-    Fills       _fills {};
+    SectionSummaries _infos{};
 
     MapType type = MapType::Empty;
     // logging ---------------------------------------

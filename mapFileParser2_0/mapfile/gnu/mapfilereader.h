@@ -38,6 +38,7 @@ public: /* IMapFileReader interface */
 private:
     bool validateName(const QString&) const;
     Cursor processSymbol(const QSet<QString>& names, const MapSymbol::Symbol& data, const qsizetype pos);
+    void processSectionInfos(IMapFile& mapFile);
 private: /* fields */
     // descriptor of file -------------------
     MapDescriptor descr;

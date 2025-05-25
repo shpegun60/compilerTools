@@ -19,7 +19,7 @@ MapFileViewer::MapFileViewer(const compiler_tools::IMapFile& mapFile, QWidget* p
     m_splitter->addWidget(m_sectionsTable);
 
     // Налаштування таблиць
-    setupSymbolsTable();
+    //setupSymbolsTable();
     setupFilesTable();
     setupSectionsTable();
 
@@ -48,8 +48,8 @@ void MapFileViewer::setupSymbolsTable()
     m_symbolsTable->setRowCount(symbols.size());
 
     int row = 0;
-    for (const auto& [key, proxy] : symbols) {
-        const auto& symbol = proxy.value;
+    for (const auto& sym : symbols) {
+        const auto& symbol = sym.value;
         m_symbolsTable->setItem(row, 0, new QTableWidgetItem(symbol.name));
         m_symbolsTable->setItem(row, 1, new QTableWidgetItem(QString::number(symbol.vram, 16)));
         m_symbolsTable->setItem(row, 2, new QTableWidgetItem(symbol.vrom ? QString::number(*symbol.vrom, 16) : ""));
@@ -57,15 +57,15 @@ void MapFileViewer::setupSymbolsTable()
         m_symbolsTable->setItem(row, 4, new QTableWidgetItem(QString::number(symbol.id)));
 
         QComboBox* sectionCombo = new QComboBox();
-        for (const auto& [secKey, secProxy] : m_mapFile.sections()) {
-            sectionCombo->addItem(secKey, secProxy.value.id);
+        for (const auto& sec : m_mapFile.sections()) {
+            sectionCombo->addItem(sec.key, sec.value.id);
         }
         sectionCombo->setCurrentIndex(sectionCombo->findData(symbol.idSection));
         m_symbolsTable->setCellWidget(row, 5, sectionCombo);
 
         QComboBox* fileCombo = new QComboBox();
-        for (const auto& [fileKey, fileProxy] : m_mapFile.files()) {
-            fileCombo->addItem(fileProxy.value.filename, fileProxy.value.id);
+        for (const auto& f : m_mapFile.files()) {
+            fileCombo->addItem(f.value.filename, f.value.id);
         }
         fileCombo->setCurrentIndex(fileCombo->findData(symbol.idFile));
         m_symbolsTable->setCellWidget(row, 6, fileCombo);
@@ -87,8 +87,8 @@ void MapFileViewer::setupFilesTable()
     m_filesTable->setRowCount(files.size());
 
     int row = 0;
-    for (const auto& [key, proxy] : files) {
-        const auto& file = proxy.value;
+    for (const auto& f : files) {
+        const auto& file = f.value;
         m_filesTable->setItem(row, 0, new QTableWidgetItem(file.filename));
         m_filesTable->setItem(row, 1, new QTableWidgetItem(QString::number(file.vram, 16)));
         m_filesTable->setItem(row, 2, new QTableWidgetItem(QString::number(file.size)));
@@ -112,20 +112,29 @@ void MapFileViewer::setupFilesTable()
 
 void MapFileViewer::setupSectionsTable()
 {
-    m_sectionsTable->setColumnCount(5);
-    QStringList headers = {"Name", "VRAM", "Size", "ID", "Files", "Symbols"};
+    m_sectionsTable->setColumnCount(10);
+    QStringList headers = {"Name", "VRAM", "VROM","Size", "ID", "from", "to", "size",  "Files", "Symbols"};
     m_sectionsTable->setHorizontalHeaderLabels(headers);
 
     const auto& sections = m_mapFile.sections();
     m_sectionsTable->setRowCount(sections.size());
 
     int row = 0;
-    for (const auto& [key, proxy] : sections) {
-        const auto& section = proxy.value;
+    for (const auto& s : sections) {
+        const auto& section = s.value;
         m_sectionsTable->setItem(row, 0, new QTableWidgetItem(section.name));
         m_sectionsTable->setItem(row, 1, new QTableWidgetItem(QString::number(section.vram, 16)));
-        m_sectionsTable->setItem(row, 2, new QTableWidgetItem(QString::number(section.size)));
-        m_sectionsTable->setItem(row, 3, new QTableWidgetItem(QString::number(section.id)));
+        m_sectionsTable->setItem(row, 2, new QTableWidgetItem(QString::number(section.vrom.value_or(0), 16)));
+        m_sectionsTable->setItem(row, 3, new QTableWidgetItem(QString::number(section.size)));
+        m_sectionsTable->setItem(row, 4, new QTableWidgetItem(section.sizedev > 0 ? '+' + QString::number(section.sizedev) : QString::number(section.sizedev)));
+
+        if(section.baddr < section.eaddr) {
+            m_sectionsTable->setItem(row, 5, new QTableWidgetItem(QString::number(section.baddr, 16)));
+            m_sectionsTable->setItem(row, 6, new QTableWidgetItem(QString::number(section.eaddr, 16)));
+            m_sectionsTable->setItem(row, 7, new QTableWidgetItem(QString::number(section.eaddr - section.baddr)));
+        }
+
+
 
         QComboBox* filesCombo = new QComboBox();
         for (const auto& fileId : section.idFiles) {
@@ -134,7 +143,7 @@ void MapFileViewer::setupSectionsTable()
                 filesCombo->addItem(file->filename, fileId);
             }
         }
-        m_sectionsTable->setCellWidget(row, 4, filesCombo);
+        m_sectionsTable->setCellWidget(row, 8, filesCombo);
 
         QComboBox* symbolsCombo = new QComboBox();
         for (const auto& symId : section.idSymbols) {
@@ -143,7 +152,7 @@ void MapFileViewer::setupSectionsTable()
                 symbolsCombo->addItem(sym->name, symId);
             }
         }
-        m_sectionsTable->setCellWidget(row, 5, symbolsCombo);
+        m_sectionsTable->setCellWidget(row, 9, symbolsCombo);
 
         row++;
     }

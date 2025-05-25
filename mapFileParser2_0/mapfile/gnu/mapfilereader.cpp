@@ -13,10 +13,13 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
     symbolParser.read(descr, rawParser);
 
     // Aliases to containers for faster access
+    auto& fills    = mapFile._fills;          // QList<Fill>
+
     auto& sections = mapFile._sections;       // HashIndex<QString, Section>
     auto& symbols  = mapFile._symbols;        // HashIndex<QString, Symbol>
     auto& files    = mapFile._files;          // HashIndex<QString, File>
-    auto& fills    = mapFile._fills;          // QList<Fill>
+    auto& infos    = mapFile._infos;
+
 
     const auto& sectionDataList = symbolParser.data();
     sections.reserve(sectionDataList.size()); // avoid rehash during section inserts
@@ -31,8 +34,11 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
     for (const auto& sectionData : sectionDataList) {
         IMapFile::Section section{};
         section.name   = sectionData.name;
+        section.name = section.name.remove('*').split(' ', Qt::SkipEmptyParts).first().trimmed();
         section.vram   = 0;
         section.size   = 0;
+        section.baddr = std::numeric_limits<quint64>::max();
+        section.eaddr = 0;
         section.id     = IMapFile::Sections::INVALID;
         section.idSymbols.reserve(sectionData.addresses.size());
         section.idFiles.reserve(4);
@@ -50,7 +56,7 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
                 int counter = 0;
 
                 do {
-                    auto some = processSymbol(rawParser.names(), symEntry, nextpos);
+                    auto some = processSymbol(symbolParser.names(), symEntry, nextpos);
 
                     // is fill -------------------------------------
                     if(some.type == CursorType::isFill) {
@@ -61,7 +67,6 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
                     }
                     // is symbol -----------------------------------
                     else if(some.type == CursorType::isSymbol) {
-
                         IMapFile::Symbol symbol{};
                         symbol.name      = some.name;
                         symbol.lable     = some.lable;
@@ -92,13 +97,21 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
                             // Link symbol to id
                             auto s = symbols.at(symIdx);
                             if(s) {
+                                const quint64 baddr = s->vram;
+                                const quint64 eaddr = baddr + s->size.value_or(0);
                                 s->id = symIdx;
                                 // Link symbol to section
                                 section.idSymbols.insert(symIdx);
 
-                                if(s->size.has_value()) {
-                                    section.size += s->size.value();
+                                if(baddr < section.baddr) {
+                                    section.baddr = baddr;
                                 }
+
+                                if(eaddr > section.eaddr) {
+                                    section.eaddr = eaddr;
+                                }
+
+                                section.size += s->size.value_or(0);
                             }
                         }
 
@@ -144,37 +157,34 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
                         qDebug() << "vrom: " << some.vrom;
                         qDebug() << '\n';
 
-                        // Only for test
                         {
-                            IMapFile::Section testSec{};
-                            testSec.name   = some.name + "@_post";
-                            testSec.vram   = some.vram;
-                            testSec.vrom   = some.vrom;
-                            testSec.size   = some.size.value_or(0);
-                            testSec.id     = IMapFile::Sections::INVALID;
+                            IMapFile::SectionSummary info{};
+                            info.name = some.name;
+                            info.vram = some.vram;
+                            info.vrom = some.vrom;
+                            info.size = some.size.value_or(0);
 
+
+                            IMapFile::SectionSummaries::Index infoIdx = infos.emplace(info.name, std::move(info));
                             int atemps = 0;
-                            IMapFile::Sections::Index secIdx = sections.emplace(testSec.name, std::move(testSec));
-                            while(secIdx == IMapFile::Sections::INVALID) {
-                                testSec.name += QString("@_%1").arg(unnamedSymbolCount++);
-                                secIdx = sections.emplace(testSec.name, std::move(testSec));
+                            while(infoIdx == IMapFile::SectionSummaries::INVALID) {
+                                info.name += QString("@_%1").arg(unnamedSymbolCount++);
+                                infoIdx = infos.emplace(info.name, std::move(info));
 
                                 ++atemps;
                                 if(atemps > 3) {
                                     break;
                                 }
                             }
-
-                            // Update section reference in container
-                            auto sec = sections.at(secIdx);
-                            if(sec) {
-                                sec->id = secIdx;
-                            }
                         }
                     }
                     // out of range
                     else if(some.type == CursorType::isOutOfRange) {
                         break;
+                    } else {
+                        qDebug() << "undefine symbol!!!!";
+                        qDebug() << symEntry.lines;
+                        qDebug() << '\n';
                     }
                     nextpos = some.nextPos;
                     ++counter;
@@ -184,31 +194,73 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
 
         // Finally insert section
         {
-            int atemps = 0;
-            IMapFile::Sections::Index secIdx = sections.emplace(section.name, std::move(section));
-            while(secIdx == IMapFile::Sections::INVALID) {
-                section.name += QString("@_%1").arg(unnamedSymbolCount++);
+            IMapFile::Sections::Index secIdx = sections.indexOf(section.name);
+            if(secIdx == IMapFile::Files::INVALID) {
+
+                int atemps = 0;
                 secIdx = sections.emplace(section.name, std::move(section));
+                while(secIdx == IMapFile::Sections::INVALID) {
+                    section.name += QString("@_%1").arg(unnamedSymbolCount++);
+                    secIdx = sections.emplace(section.name, std::move(section));
 
-                ++atemps;
-                if(atemps > 3) {
-                    break;
-                }
-            }
-
-            // Update section reference in container
-            auto sec = sections.at(secIdx);
-            if(sec) {
-                sec->id = secIdx;
-                for(const auto& symIdx : std::as_const(sec->idSymbols)) {
-                    auto s = symbols.at(symIdx);
-                    if(s) {
-                        s->idSection = secIdx;
+                    ++atemps;
+                    if(atemps > 3) {
+                        break;
                     }
+                }
+
+                // Update section reference in container
+                auto sec = sections.at(secIdx);
+                if(sec) {
+                    sec->id = secIdx;
+                    //sec->vram = sec->baddr;
+                    for(const auto& symIdx : std::as_const(sec->idSymbols)) {
+                        auto s = symbols.at(symIdx);
+                        if(s) {
+                            s->idSection = secIdx;
+                        }
+                    }
+                }
+            } else {
+
+                // struct Section {
+                //     QString name;
+                //     quint64 vram;
+                //     std::optional<quint64> vrom;
+                //     quint64 size;
+                //     // iteration
+                //     Sections::Index id;
+                //     QSet<Files::Index> idFiles;
+                //     QSet<Symbols::Index> idSymbols;
+                // };
+
+                auto sec = sections.at(secIdx);
+                if(sec) {
+
+                    if(section.baddr < sec->baddr) {
+                        sec->baddr = section.baddr;
+                    }
+
+                    if(section.eaddr > sec->eaddr) {
+                        sec->eaddr = section.eaddr;
+                    }
+
+
+                    for(const auto& symIdx : std::as_const(section.idSymbols)) {
+                        auto s = symbols.at(symIdx);
+                        if(s) {
+                            s->idSection = secIdx;
+                        }
+                    }
+
+                    sec->size += section.size;
+                    sec->idFiles.unite(section.idFiles);
+                    sec->idSymbols.unite(section.idSymbols);
                 }
             }
         }
     }
+    processSectionInfos(mapFile);
 
     return true;
 }
@@ -228,8 +280,55 @@ bool MapFileReader::validateName(const QString & name) const
     return false;
 }
 
+void MapFileReader::processSectionInfos(IMapFile& mapFile)
+{
+    auto& sections = mapFile._sections;       // HashIndex<QString, Section>
+
+    for(const auto& inf : std::as_const(mapFile._infos)) {
+        const auto& i = inf.value;
+
+        auto it = sections.find(inf.key);
+        if(it != sections.end()) {
+            auto& s = (*it).value;
+            s.vram = i.vram;
+            s.vrom = i.vrom;
+            s.sizedev = i.size - s.size;
+        } else {
+            // Only for test
+            IMapFile::Section testSec{};
+            testSec.name   = i.name + "@_post";
+            testSec.vram   = i.vram;
+            testSec.vrom   = i.vrom;
+            testSec.size   = i.size;
+            testSec.id     = IMapFile::Sections::INVALID;
+
+            int atemps = 0;
+            IMapFile::Sections::Index secIdx = sections.emplace(testSec.name, std::move(testSec));
+            while(secIdx == IMapFile::Sections::INVALID) {
+                testSec.name += QString("@_%1").arg(i.vram);
+                secIdx = sections.emplace(testSec.name, std::move(testSec));
+
+                ++atemps;
+                if(atemps > 3) {
+                    break;
+                }
+            }
+
+            // Update section reference in container
+            auto sec = sections.at(secIdx);
+            if(sec) {
+                sec->id = secIdx;
+            }
+        }
+
+
+
+    }
+
+}
+
 MapFileReader::Cursor MapFileReader::processSymbol(const QSet<QString>& names,
-                                                     const MapSymbol::Symbol& data, const qsizetype pos)
+                                                   const MapSymbol::Symbol& data, const qsizetype pos)
 {
     if(pos >= data.lines.size()) {
         Cursor some{};

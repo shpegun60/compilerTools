@@ -8,6 +8,7 @@ bool MapSymbol::read(const MapDescriptor& descr, const MapRaw& mapraw)
         return false;
     }
     _sections.reserve(mapraw.data().size());
+    _names.reserve(mapraw.data().size());
 
     Symbol currentSymbol {};
     QString symbolName {};
@@ -18,6 +19,24 @@ bool MapSymbol::read(const MapDescriptor& descr, const MapRaw& mapraw)
         Section section{};
         section.name = raw.name;
         section.addresses.reserve(4);
+
+        // push names to QSet
+        {
+            QString nameCopy = raw.name;
+            QStringList names1 = nameCopy.split(' ', Qt::SkipEmptyParts);
+            nameCopy.remove('*');
+            QStringList names2 = nameCopy.split(' ', Qt::SkipEmptyParts);
+            _names.insert(std::move(nameCopy));
+            _names.insert(raw.name);
+
+            for (int i = 0; i < names1.size(); ++i) {
+                _names.insert(names1[i].trimmed());
+            }
+
+            for (int i = 0; i < names2.size(); ++i) {
+                _names.insert(names2[i].trimmed());
+            }
+        }
 
         for(auto& line : raw.lines) {
             if (line.isEmpty()) {

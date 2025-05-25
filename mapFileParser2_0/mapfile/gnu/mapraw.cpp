@@ -21,7 +21,6 @@ void MapRaw::readBody(const MapDescriptor& descr, const QString& map)
     int unknownCnt = 0;
     Section seg {};
     seg.lines.reserve(4);
-    _names.reserve(4);
 
     // ------------------------------------------------------
     for (qsizetype i = 0; i < lines.size(); ++i) {
@@ -45,24 +44,6 @@ void MapRaw::readBody(const MapDescriptor& descr, const QString& map)
                     if(seg.name.isEmpty()) {
                         seg.name = QString(descr.unknown + "%1").arg(unknownCnt);
                         ++unknownCnt;
-                    }
-
-                    // push names to QSet
-                    {
-                        QString nameCopy = seg.name;
-                        QStringList names1 = nameCopy.split(' ', Qt::SkipEmptyParts);
-                        nameCopy.remove('*');
-                        QStringList names2 = nameCopy.split(' ', Qt::SkipEmptyParts);
-                        _names.insert(std::move(nameCopy));
-                        _names.insert(seg.name);
-
-                        for (int i = 0; i < names1.size(); ++i) {
-                            _names.insert(names1[i].trimmed());
-                        }
-
-                        for (int i = 0; i < names2.size(); ++i) {
-                            _names.insert(names2[i].trimmed());
-                        }
                     }
                     _sections.emplace_back(std::move(seg));
                 }

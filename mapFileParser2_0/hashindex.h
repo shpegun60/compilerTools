@@ -23,19 +23,17 @@ public:
     using Index = int;
     static constexpr Index INVALID = -1;
 
-    // Proxy to return value and index
-    struct Proxy {
+    struct Entry {
+        const Key&  key;
         T& value;
         const Index idx;
-
-        inline Proxy& operator=(const Proxy& other) { value = other.value; return *this; }
-        inline Proxy& operator=(const T& other) { value = other; return *this; }
-        inline operator T&() { return value; }
-        inline operator const T&() const { return value; }
     };
 
-    using Pair = std::pair<const Key&, Proxy>;
-    using ConstPair = std::pair<const Key&, const Proxy>;
+    struct ConstEntry {
+        const Key&   key;
+        const T&     value;
+        const Index  idx;
+    };
 
     HashIndex() = default;
     ~HashIndex() = default;
@@ -89,7 +87,7 @@ public:
     }
 
     // operator[] returns Proxy, inserting default if missing
-    inline Proxy operator[](const Key& key) {
+    inline T& operator[](const Key& key) {
         Index idx = indexOf(key);
         if (idx == INVALID) {
             idx = insert(key, T{});
@@ -97,13 +95,14 @@ public:
                 throw std::runtime_error("Insertion failed");
             }
         }
-        return Proxy{ *elements[idx], idx };
+        return *elements[idx];
     }
 
-    inline const Proxy operator[](const Key& key) const {
-        static T dummy{};
-        Index idx = indexOf(key);
-        return idx != INVALID ? Proxy(const_cast<T&>(*elements[idx]), idx) : Proxy(dummy, INVALID);
+    // (optional) constant version:
+    inline const T& operator[](const Key& key) const {
+        Index i = indexOf(key);
+        static const T dummy{};
+        return i != INVALID ? *elements[i] : dummy;
     }
 
     bool remove(const Key& key) {
@@ -143,9 +142,21 @@ public:
 
     class iterator {
     public:
+        using value_type        = Entry;
+        using reference         = Entry;
+        using pointer           = Entry*;
+        using iterator_category = std::forward_iterator_tag;
+        using difference_type   = qsizetype;
+
         iterator(HashIndex& c, qsizetype i): cont(c), idx(i) { skip(); }
         iterator& operator=(const iterator& o) { cont = o.cont; idx = o.idx; return *this; }
-        Pair operator*() { return { cont.indexToKey[idx], Proxy{*cont.elements[idx], static_cast<Index>(idx)} }; }
+        reference operator*() const {
+            return Entry {
+                cont.indexToKey[idx],
+                *cont.elements[idx],
+                static_cast<Index>(idx)
+            };
+        }
         iterator& operator++() { ++idx; skip(); return *this; }
         bool operator!=(const iterator& o) const { return idx != o.idx; }
         bool operator==(const iterator& o) const { return idx == o.idx; }
@@ -155,13 +166,26 @@ public:
         HashIndex& cont;
         qsizetype idx;
     };
+    // generators begin/end
     iterator begin() { return { *this, 0 }; }
     iterator end()   { return { *this, elements.size() }; }
 
     class const_iterator {
     public:
+        using value_type        = ConstEntry;
+        using reference         = ConstEntry;
+        using pointer           = const ConstEntry*;
+        using iterator_category = std::forward_iterator_tag;
+        using difference_type   = qsizetype;
+
         const_iterator(const HashIndex& c, qsizetype i): cont(c), idx(i) { skip(); }
-        ConstPair operator*() const { return { cont.indexToKey[idx], Proxy{const_cast<T&>(*cont.elements[idx]), static_cast<Index>(idx)} }; }
+        reference operator*() const {
+            return ConstEntry{
+                cont.indexToKey[idx],
+                *cont.elements[idx],        // const T&
+                static_cast<Index>(idx)
+            };
+        }
         const_iterator& operator++() { ++idx; skip(); return *this; }
         bool operator!=(const const_iterator& o) const { return idx != o.idx; }
         bool operator==(const const_iterator& o) const { return idx == o.idx; }
@@ -172,6 +196,7 @@ public:
         qsizetype idx;
     };
 
+    // generators begin/end
     const_iterator begin() const { return { *this, 0 }; }
     const_iterator end()   const { return { *this, elements.size() }; }
     const_iterator cbegin() const { return begin(); }
