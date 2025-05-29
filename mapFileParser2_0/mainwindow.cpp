@@ -28,7 +28,7 @@ MainWindow::MainWindow(QWidget *parent)
         gnu::MapFileReader reader;
 
 
-        QFile file("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\BC_master.map");
+        QFile file("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\output.map");
         //QFile file("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\test\\cleo.map");
         //QFile file("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\test\\risc5.map");
         //QFile file("C:\\Users\\admin\\Documents\\Work\\Qt\\compilerTools\\mapFileParser2_0\\test\\hello.map");

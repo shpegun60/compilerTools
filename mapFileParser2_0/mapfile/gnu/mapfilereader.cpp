@@ -33,10 +33,14 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
         IMapFile::Section section{};
         section.name   = sectionData.name;
         section.name = section.name.remove('*').split(' ', Qt::SkipEmptyParts).first().trimmed();
-        section.vram   = 0;
+        section.vram   = std::nullopt;
+        section.vrom   = std::nullopt;
+        section.sizedev = std::numeric_limits<int>::max();
         section.size   = 0;
         section.baddr = std::numeric_limits<quint64>::max();
         section.eaddr = 0;
+        section.isValid = false;
+        section.sizePercent = 1;
         section.id     = IMapFile::Sections::INVALID;
         section.idSymbols.reserve(sectionData.addresses.size());
         section.idFiles.reserve(4);
@@ -214,18 +218,7 @@ bool MapFileReader::read(IMapFile& mapFile, QString& file)
                     }
                 }
             } else {
-
-                // struct Section {
-                //     QString name;
-                //     quint64 vram;
-                //     std::optional<quint64> vrom;
-                //     quint64 size;
-                //     // iteration
-                //     Sections::Index id;
-                //     QSet<Files::Index> idFiles;
-                //     QSet<Symbols::Index> idSymbols;
-                // };
-
+                // merge two sections
                 auto sec = sections.at(secIdx);
                 if(sec) {
 
@@ -291,29 +284,75 @@ void MapFileReader::processFill(IMapFile &m, IMapFile::Section& s, const IMapFil
     m._fills.append(fills);
 }
 
+quint64 MapFileReader::selectMedianVariant(const quint64 a,
+                                           const quint64 b,
+                                           const quint64 c)
+{
+    if ((a <= b && b <= c) || (c <= b && b <= a)) {
+        return b;
+    } else if ((b <= a && a <= c) || (c <= a && a <= b)) {
+        return a;
+    } else {
+        return c;
+    }
+}
+
+
 void MapFileReader::processSectionInfos(IMapFile& mapFile)
 {
     auto& sections = mapFile._sections;       // HashIndex<QString, Section>
+    const auto& infos    = mapFile._infos;
 
-    for(const auto& inf : std::as_const(mapFile._infos)) {
-        const auto& i = inf.value;
+    for(const auto& sec : sections) {
+        auto& s = sec.value;
 
-        auto it = sections.find(inf.key);
-        if(it != sections.end()) {
-            auto& s = (*it).value;
+        const auto it = infos.find(s.name);
+        if(it != infos.end()) {
+            const auto& i = (*it).value;
+            const quint64 calcSize = s.eaddr - s.baddr;
+            s.size = selectMedianVariant(s.size, i.size, calcSize);
             s.vram = i.vram;
             s.vrom = i.vrom;
-            s.sizedev = i.size - s.size;
+            if(s.baddr < s.eaddr) {
+                const int a = i.size - s.size;
+                const int b = calcSize - s.size;
+                s.sizedev = std::abs(a) > std::abs(b) ? a : b;
+            } else {
+                s.sizedev = i.size - s.size;
+            }
+        } else {
+            if(s.baddr < s.eaddr) {
+                const quint64 calcSize = s.eaddr - s.baddr;
+                s.size = std::min(s.size, calcSize);
+                s.vram = s.baddr;
+                s.sizedev = calcSize - s.size;
+            }
         }
-        //else
+
+        // check section
         {
-            // Only for test
+            s.sizePercent = std::abs(static_cast<float>(s.sizedev) / static_cast<float>(s.size));
+
+            if(s.size == 0 || (s.baddr > s.eaddr) || s.sizedev == std::numeric_limits<int>::max() || s.idSymbols.empty() || s.sizePercent > 0.3) {
+                s.isValid = false;
+            } else {
+                s.isValid = true;
+            }
+        }
+
+    }
+
+    // Only for test
+    {
+        for(const auto& inf : std::as_const(infos)) {
+            const auto& i = inf.value;
             IMapFile::Section testSec{};
             testSec.name   = i.name + "@_post";
             testSec.vram   = i.vram;
             testSec.vrom   = i.vrom;
             testSec.size   = i.size;
             testSec.id     = IMapFile::Sections::INVALID;
+            testSec.sizedev = 0;
 
             int atemps = 0;
             IMapFile::Sections::Index secIdx = sections.emplace(testSec.name, std::move(testSec));

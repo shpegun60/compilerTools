@@ -74,13 +74,16 @@ public:
 
     struct Section {
         QString name;
-        quint64 vram;
+        std::optional<quint64> vram;
         std::optional<quint64> vrom;
         quint64 size;
         int sizedev;
+        float sizePercent;
         // other for debug
         quint64 baddr;
         quint64 eaddr;
+        // other for debug
+        bool isValid;
         // iteration
         Sections::Index id;
         QSet<Files::Index> idFiles;

@@ -123,8 +123,8 @@ void MapFileViewer::setupSectionsTable()
     for (const auto& s : sections) {
         const auto& section = s.value;
         m_sectionsTable->setItem(row, 0, new QTableWidgetItem(section.name));
-        m_sectionsTable->setItem(row, 1, new QTableWidgetItem(QString::number(section.vram, 16)));
-        m_sectionsTable->setItem(row, 2, new QTableWidgetItem(QString::number(section.vrom.value_or(0), 16)));
+        m_sectionsTable->setItem(row, 1, new QTableWidgetItem(QString::number(section.vram.value_or(-1), 16)));
+        m_sectionsTable->setItem(row, 2, new QTableWidgetItem(QString::number(section.vrom.value_or(-1), 16)));
         m_sectionsTable->setItem(row, 3, new QTableWidgetItem(QString::number(section.size)));
         m_sectionsTable->setItem(row, 4, new QTableWidgetItem(section.sizedev > 0 ? '+' + QString::number(section.sizedev) : QString::number(section.sizedev)));
 
@@ -153,6 +153,17 @@ void MapFileViewer::setupSectionsTable()
             }
         }
         m_sectionsTable->setCellWidget(row, 9, symbolsCombo);
+
+
+        for (int i = 0; i < 3; ++i) {
+            QTableWidgetItem* item = m_sectionsTable->item(row, i);
+
+            if (section.isValid) {
+                item->setBackground(QBrush(Qt::green));
+            } else {
+                item->setBackground(QBrush(Qt::red));
+            }
+        }
 
         row++;
     }

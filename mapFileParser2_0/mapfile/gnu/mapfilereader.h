@@ -39,6 +39,7 @@ private:
     Cursor processSymbol(const QSet<QString>& names, const MapSymbol::Symbol& data, const qsizetype pos);
     void processFill(IMapFile&, IMapFile::Section&, const IMapFile::Fills&);
     void processSectionInfos(IMapFile& mapFile);
+    quint64 selectMedianVariant(const quint64 var1, const quint64 var2, const quint64 var3);
 private: /* fields */
     // descriptor of file -------------------
     MapDescriptor descr;
